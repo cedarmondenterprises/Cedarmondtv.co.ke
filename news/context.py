@@ -16,6 +16,7 @@ def site(request):
         'breaking_story': Article.objects.live().filter(breaking=True).first(),
         'breaking_ticker': breaking_ticker,
         'site_url': settings.SITE_URL,
+        'gtm_container_id': settings.GTM_CONTAINER_ID,
         'canonical': settings.SITE_URL + request.path,
         'seo_title': 'Cedarmond TV | Kenya, in perspective.',
         'seo_description': 'Independent journalism and original reporting from Kenya, covering politics, business, counties, culture and sport.',

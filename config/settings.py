@@ -1,4 +1,5 @@
 import os
+import re
 from datetime import timedelta
 from pathlib import Path
 from django.core.exceptions import ImproperlyConfigured
@@ -9,6 +10,9 @@ if not SECRET_KEY:
     raise ImproperlyConfigured('Set SECRET_KEY before starting production.')
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000').rstrip('/')
+GTM_CONTAINER_ID = os.getenv('GTM_CONTAINER_ID', '').strip()
+if GTM_CONTAINER_ID and not re.fullmatch(r'GTM-[A-Z0-9]+', GTM_CONTAINER_ID):
+    raise ImproperlyConfigured('GTM_CONTAINER_ID must be a Google Tag Manager container ID.')
 CSRF_TRUSTED_ORIGINS = [SITE_URL]
 INSTALLED_APPS = ['django.contrib.admin','django.contrib.auth','django.contrib.contenttypes','django.contrib.sessions','django.contrib.messages','django.contrib.staticfiles','django.contrib.sitemaps','rest_framework','drf_spectacular','drf_spectacular_sidecar','axes','django_prose_editor','simple_history','post_office','news']
 MIDDLEWARE = ['django.middleware.security.SecurityMiddleware','news.security_headers.CSPNonceMiddleware','whitenoise.middleware.WhiteNoiseMiddleware','django.contrib.sessions.middleware.SessionMiddleware','django.middleware.common.CommonMiddleware','django.middleware.csrf.CsrfViewMiddleware','django.contrib.auth.middleware.AuthenticationMiddleware','django.contrib.messages.middleware.MessageMiddleware','django.middleware.clickjacking.XFrameOptionsMiddleware','axes.middleware.AxesMiddleware','simple_history.middleware.HistoryRequestMiddleware']
