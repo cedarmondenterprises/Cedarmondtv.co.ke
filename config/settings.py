@@ -14,7 +14,7 @@ INSTALLED_APPS = ['django.contrib.admin','django.contrib.auth','django.contrib.c
 MIDDLEWARE = ['django.middleware.security.SecurityMiddleware','whitenoise.middleware.WhiteNoiseMiddleware','django.contrib.sessions.middleware.SessionMiddleware','django.middleware.common.CommonMiddleware','django.middleware.csrf.CsrfViewMiddleware','django.contrib.auth.middleware.AuthenticationMiddleware','django.contrib.messages.middleware.MessageMiddleware','django.middleware.clickjacking.XFrameOptionsMiddleware','axes.middleware.AxesMiddleware','simple_history.middleware.HistoryRequestMiddleware']
 ROOT_URLCONF = 'config.urls'
 LOGIN_URL = '/admin/login/'
-TEMPLATES = [{'BACKEND':'django.template.backends.django.DjangoTemplates','DIRS':[BASE_DIR/'templates'],'APP_DIRS':True,'OPTIONS':{'context_processors':['django.template.context_processors.request','django.contrib.auth.context_processors.auth','django.contrib.messages.context_processors.messages','news.context.site']}}]
+TEMPLATES = [{'BACKEND':'django.template.backends.django.DjangoTemplates','DIRS':[BASE_DIR/'templates'],'APP_DIRS':True,'OPTIONS':{'context_processors':['django.template.context_processors.request','django.contrib.auth.context_processors.auth','django.contrib.messages.context_processors.messages','news.context.site','news.context.admin_dashboard']}}]
 WSGI_APPLICATION = 'config.wsgi.application'
 if os.getenv('POSTGRES_HOST'):
     DATABASES = {'default':{'ENGINE':'django.db.backends.postgresql','HOST':os.environ['POSTGRES_HOST'],'NAME':os.getenv('POSTGRES_DB','cedarmond'),'USER':os.getenv('POSTGRES_USER','cedarmond'),'PASSWORD':os.environ['POSTGRES_PASSWORD'],'CONN_MAX_AGE':60}}

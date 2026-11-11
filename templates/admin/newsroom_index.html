@@ -1,26 +1,36 @@
 {% extends 'admin/index.html' %}
 {% load static %}
-
-{% block extrastyle %}
-{{ block.super }}
-<link rel="stylesheet" href="{% static 'admin_newsroom.css' %}">
-{% endblock %}
-
+{% block content_title %}{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin_newsroom.css' %}">{% endblock %}
 {% block content %}
-<section class="newsroom-home" aria-labelledby="newsroom-home-title">
-  <div class="newsroom-home-intro">
-    <p class="newsroom-kicker">CEDARMOND TV · NEWSROOM</p>
-    <h1 id="newsroom-home-title">What would you like to do?</h1>
-    <p>Publishing, review and site management in one place.</p>
+<div class="newsroom-dashboard">
+  <header class="dashboard-welcome">
+    <div><p class="newsroom-kicker">CEDARMOND TV · NEWSROOM</p><h1>Good evening, {{ user.get_short_name|default:user.get_username }}</h1><p>Your publishing desk, audience pulse and newsroom tools.</p></div>
+    {% if perms.news.add_article %}<a class="dashboard-primary" href="{% url 'admin:news_article_add' %}"><span aria-hidden="true">＋</span> Write a story</a>{% endif %}
+  </header>
+
+  <section class="dashboard-metrics" aria-label="Newsroom overview">
+    <a class="dashboard-metric" href="{% url 'admin:news_article_changelist' %}?status__exact=draft"><span class="metric-label">Drafts</span><strong>{{ dashboard_drafts }}</strong><small>Stories being prepared</small></a>
+    <a class="dashboard-metric metric-review" href="{% url 'admin:news_article_changelist' %}?status__exact=review"><span class="metric-label">In review</span><strong>{{ dashboard_review }}</strong><small>Awaiting an editor</small></a>
+    <a class="dashboard-metric" href="{% url 'admin:news_article_changelist' %}?status__exact=published"><span class="metric-label">Published</span><strong>{{ dashboard_published }}</strong><small>Live stories</small></a>
+    <a class="dashboard-metric" href="{% url 'admin:news_articledailyview_changelist' %}"><span class="metric-label">Article views · 7 days</span><strong>{{ dashboard_weekly_views }}</strong><small>Aggregate readership</small></a>
+  </section>
+
+  <div class="dashboard-workspace">
+    <section class="dashboard-panel dashboard-tools"><header><div><p class="newsroom-kicker">WORKSPACE</p><h2>Newsroom tools</h2></div></header><div class="dashboard-tool-grid">
+      {% if perms.news.view_article %}<a href="{% url 'admin:news_article_desk' %}"><span class="tool-index">01</span><span><strong>Editorial desk</strong><small>Review submissions and deadlines</small></span><b aria-hidden="true">→</b></a><a href="{% url 'admin:news_article_changelist' %}"><span class="tool-index">02</span><span><strong>Manage stories</strong><small>Find, edit and schedule articles</small></span><b aria-hidden="true">→</b></a>{% endif %}
+      {% if perms.news.view_articledailyview %}<a href="{% url 'admin:news_articledailyview_changelist' %}"><span class="tool-index">03</span><span><strong>Audience analytics</strong><small>Views, countries and devices</small></span><b aria-hidden="true">→</b></a>{% endif %}
+      {% if perms.news.view_storycomment %}<a href="{% url 'admin:news_storycomment_changelist' %}?status__exact=pending"><span class="tool-index">04</span><span><strong>Reader comments</strong><small>{{ dashboard_pending_comments }} waiting for moderation</small></span><b aria-hidden="true">→</b></a>{% endif %}
+      {% if perms.news.view_breakingnewsticker %}<a href="{% url 'admin:news_breakingnewsticker_changelist' %}"><span class="tool-index">05</span><span><strong>Breaking news ticker</strong><small>Manage messages and display schedules</small></span><b aria-hidden="true">→</b></a>{% endif %}
+      {% if perms.news.view_mediaasset %}<a href="{% url 'admin:news_mediaasset_changelist' %}"><span class="tool-index">06</span><span><strong>Media library</strong><small>Manage licensed newsroom images</small></span><b aria-hidden="true">→</b></a>{% endif %}
+      {% if perms.news.view_adplacement %}<a href="{% url 'admin:news_adplacement_changelist' %}"><span class="tool-index">07</span><span><strong>Ads and sponsorships</strong><small>Manage approved site placements</small></span><b aria-hidden="true">→</b></a>{% endif %}
+      {% if perms.news.view_page %}<a href="{% url 'admin:news_page_changelist' %}"><span class="tool-index">08</span><span><strong>Site pages</strong><small>Update newsroom and policy information</small></span><b aria-hidden="true">→</b></a>{% endif %}
+    </div></section>
+
+    <section class="dashboard-panel dashboard-recent"><header><div><p class="newsroom-kicker">RECENT ACTIVITY</p><h2>Recently updated stories</h2></div>{% if perms.news.view_article %}<a href="{% url 'admin:news_article_changelist' %}">All stories <span aria-hidden="true">→</span></a>{% endif %}</header>
+      {% if perms.news.view_article %}<ol class="recent-story-list">{% for story in dashboard_recent_articles %}<li><a href="{% url 'admin:news_article_change' story.pk %}"><span class="recent-story-title">{{ story.title }}</span><span class="recent-story-meta">{{ story.category.name }} · {{ story.get_status_display }} · {{ story.updated_at|date:'j M, H:i' }}</span></a></li>{% empty %}<li class="recent-empty">No stories yet. Start your first draft to get the newsroom moving.</li>{% endfor %}</ol>{% else %}<p class="recent-empty">Your account does not have story access.</p>{% endif %}
+    </section>
   </div>
-  <nav class="newsroom-home-actions" aria-label="Newsroom shortcuts">
-    {% if perms.news.add_article %}<a class="newsroom-action newsroom-action-primary" href="{% url 'admin:news_article_add' %}"><strong>Write a story</strong><span>Start a draft and add reporting details.</span></a>{% endif %}
-    {% if perms.news.view_article %}<a class="newsroom-action" href="{% url 'admin:news_article_desk' %}"><strong>Editorial desk</strong><span>Review submissions, deadlines and saved drafts.</span></a><a class="newsroom-action" href="{% url 'admin:news_article_changelist' %}"><strong>Manage stories</strong><span>Find, edit, schedule or publish articles.</span></a>{% endif %}
-    {% if perms.news.view_mediaasset %}<a class="newsroom-action" href="{% url 'admin:news_mediaasset_changelist' %}"><strong>Media library</strong><span>Manage credited and rights-documented images.</span></a>{% endif %}
-    {% if perms.news.view_adplacement %}<a class="newsroom-action" href="{% url 'admin:news_adplacement_changelist' %}"><strong>Ads and sponsorships</strong><span>Upload creative and assign a live site placement.</span></a>{% endif %}
-    {% if perms.news.view_storycomment %}<a class="newsroom-action" href="{% url 'admin:news_storycomment_changelist' %}?status__exact=pending"><strong>Reader comments</strong><span>Review comments waiting for moderation.</span></a>{% endif %}
-    {% if perms.news.view_articledailyview %}<a class="newsroom-action" href="{% url 'admin:news_articledailyview_changelist' %}"><strong>Audience analytics</strong><span>Review article views, countries and broad device categories.</span></a>{% endif %}
-  </nav>
-</section>
-{{ block.super }}
+  <footer class="dashboard-footer"><span>CEDARMOND TV · PUBLISHING DESK</span><a href="{{ site_url }}" target="_blank" rel="noopener">View public website ↗</a></footer>
+</div>
 {% endblock %}
