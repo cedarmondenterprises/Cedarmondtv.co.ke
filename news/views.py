@@ -20,6 +20,7 @@ from django.utils import timezone
 from django.utils.html import strip_tags
 from django.utils.text import Truncator
 from .models import Article, ArticleURL, Category, Author, Tag, Subscription, Page, StoryComment
+from .analytics import record_article_view
 from .forms import SubscribeForm, ContactForm, StoryCommentForm
 
 
@@ -139,6 +140,7 @@ def article(request,slug):
         reservation=get_object_or_404(ArticleURL,slug=slug)
         target=get_object_or_404(Article.objects.live(),pk=reservation.article_id)
         return redirect(target.get_absolute_url(),permanent=True)
+    record_article_view(request, item)
     return render_article(request,item)
 
 def render_article(request,item,preview=False,comment_form=None,status=200):

@@ -19,6 +19,7 @@
     {% if perms.news.view_mediaasset %}<a class="newsroom-action" href="{% url 'admin:news_mediaasset_changelist' %}"><strong>Media library</strong><span>Manage credited and rights-documented images.</span></a>{% endif %}
     {% if perms.news.view_adplacement %}<a class="newsroom-action" href="{% url 'admin:news_adplacement_changelist' %}"><strong>Ads and sponsorships</strong><span>Upload creative and assign a live site placement.</span></a>{% endif %}
     {% if perms.news.view_storycomment %}<a class="newsroom-action" href="{% url 'admin:news_storycomment_changelist' %}?status__exact=pending"><strong>Reader comments</strong><span>Review comments waiting for moderation.</span></a>{% endif %}
+    {% if perms.news.view_articledailyview %}<a class="newsroom-action" href="{% url 'admin:news_articledailyview_changelist' %}"><strong>Audience analytics</strong><span>Review article views, countries and broad device categories.</span></a>{% endif %}
   </nav>
 </section>
 {{ block.super }}

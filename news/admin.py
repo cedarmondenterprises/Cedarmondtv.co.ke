@@ -1,10 +1,13 @@
+from datetime import timedelta
 from django import forms
 from django.contrib import admin, messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
+from django.db.models import Sum
 from django.urls import path
+from django.utils import timezone
 from simple_history.admin import SimpleHistoryAdmin
-from .models import Article, Category, Author, Tag, Subscription, ReaderMessage, AdPlacement, BreakingNewsTicker, Page, Campaign, MediaAsset, DraftRecovery, StoryComment
+from .models import Article, ArticleDailyView, Category, Author, Tag, Subscription, ReaderMessage, AdPlacement, BreakingNewsTicker, Page, Campaign, MediaAsset, DraftRecovery, StoryComment
 from .newsletter import queue_campaign
 admin.site.site_header = 'Cedarmond TV · Newsroom'
 admin.site.site_title = 'Cedarmond TV Newsroom'
@@ -198,6 +201,41 @@ class BreakingNewsTickerAdmin(admin.ModelAdmin):
     ordering=['-starts_at','-pk']
     readonly_fields=['created_at','updated_at']
     fieldsets=[('Ticker message',{'fields':['message','link']}),('Display schedule',{'fields':['active','starts_at','ends_at'],'description':'Use Nairobi time. The message appears only between its start and end times. Disable Active to hide it immediately.'}),('Animation',{'fields':['scroll_seconds'],'description':'Controls the time taken for one complete pass across the ticker. Readers can pause the animation.'}),('Record',{'fields':['created_at','updated_at'],'classes':['collapse']})]
+
+@admin.register(ArticleDailyView)
+class ArticleDailyViewAdmin(admin.ModelAdmin):
+    change_list_template='admin/news/articleanalytics_change_list.html'
+    list_display=['article','viewed_on','country_code','device_type','view_count']
+    list_filter=['viewed_on','country_code','device_type']
+    search_fields=['article__title']
+    date_hierarchy='viewed_on'
+    ordering=['-viewed_on','-view_count']
+    list_per_page=50
+
+    def has_add_permission(self,request): return False
+    def has_change_permission(self,request,obj=None): return False
+    def has_delete_permission(self,request,obj=None): return False
+
+    def changelist_view(self,request,extra_context=None):
+        today=timezone.localdate()
+        start=today-timedelta(days=6)
+        recent=ArticleDailyView.objects.filter(viewed_on__gte=start,viewed_on__lte=today)
+        daily=list(recent.values('viewed_on').annotate(views=Sum('view_count')).order_by('viewed_on'))
+        by_day={row['viewed_on']:row['views'] for row in daily}
+        trend=[{'date':start+timedelta(days=i),'views':by_day.get(start+timedelta(days=i),0)} for i in range(7)]
+        maximum=max([point['views'] for point in trend] or [0]) or 1
+        for point in trend: point['height']=max(5,round(point['views']*100/maximum)) if point['views'] else 3
+        context={
+            'analytics_today':recent.filter(viewed_on=today).aggregate(total=Sum('view_count'))['total'] or 0,
+            'analytics_week':recent.aggregate(total=Sum('view_count'))['total'] or 0,
+            'analytics_all_time':ArticleDailyView.objects.aggregate(total=Sum('view_count'))['total'] or 0,
+            'analytics_articles':list(recent.values('article__title','article__slug').annotate(views=Sum('view_count')).order_by('-views')[:8]),
+            'analytics_countries':list(recent.exclude(country_code='ZZ').values('country_code').annotate(views=Sum('view_count')).order_by('-views')[:8]),
+            'analytics_devices':list(recent.values('device_type').annotate(views=Sum('view_count')).order_by('-views')),
+            'analytics_trend':trend,
+            'analytics_unknown_country':recent.filter(country_code='ZZ').aggregate(total=Sum('view_count'))['total'] or 0,
+        }
+        return super().changelist_view(request,{**(extra_context or {}),**context})
 
 @admin.register(StoryComment)
 class StoryCommentAdmin(admin.ModelAdmin):

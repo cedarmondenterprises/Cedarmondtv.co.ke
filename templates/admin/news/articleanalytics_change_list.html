@@ -1,0 +1,15 @@
+{% extends 'admin/change_list.html' %}
+{% load static %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin_newsroom.css' %}">{% endblock %}
+{% block content %}
+<section class="analytics-dashboard" aria-labelledby="analytics-title">
+  <header class="analytics-heading"><div><p class="newsroom-kicker">CEDARMOND TV · AUDIENCE</p><h1 id="analytics-title">Article analytics</h1><p>First-party readership counts for the last seven days.</p></div><a href="{% url 'admin:index' %}">Newsroom home</a></header>
+  <div class="analytics-metrics"><article><span>Today</span><strong>{{ analytics_today }}</strong><small>article views</small></article><article><span>Last 7 days</span><strong>{{ analytics_week }}</strong><small>article views</small></article><article><span>All time</span><strong>{{ analytics_all_time }}</strong><small>article views recorded</small></article></div>
+  <section class="analytics-panel"><h2>Daily views</h2><div class="analytics-chart" role="img" aria-label="Daily article views for the last seven days">{% for point in analytics_trend %}<div class="analytics-day"><strong>{{ point.views }}</strong><span class="analytics-bar" style="height:{{ point.height }}%"></span><small>{{ point.date|date:'D j' }}</small></div>{% endfor %}</div></section>
+  <div class="analytics-breakdown"><section class="analytics-panel"><h2>Most-read stories</h2><ol class="analytics-list">{% for row in analytics_articles %}<li><span>{{ row.article__title }}</span><strong>{{ row.views }}</strong></li>{% empty %}<li class="analytics-empty">No article views recorded this week.</li>{% endfor %}</ol></section>
+  <section class="analytics-panel"><h2>Reader locations</h2><ol class="analytics-list">{% for row in analytics_countries %}<li><span>{{ row.country_code }}</span><strong>{{ row.views }}</strong></li>{% empty %}<li class="analytics-empty">Country data is not available yet.</li>{% endfor %}</ol><p class="analytics-note">Country is available when Cloudflare provides a country code. {{ analytics_unknown_country }} views are currently unknown.</p></section>
+  <section class="analytics-panel"><h2>Device categories</h2><ol class="analytics-list">{% for row in analytics_devices %}<li><span>{{ row.device_type|title }}</span><strong>{{ row.views }}</strong></li>{% empty %}<li class="analytics-empty">No device data recorded yet.</li>{% endfor %}</ol></section></div>
+  <p class="analytics-privacy">Privacy-first reporting: views are stored as daily totals by story, country and broad device category. Raw IP addresses, full user-agent strings and persistent device fingerprints are not stored. Counts are page views, not a count of unique people.</p>
+</section>
+{{ block.super }}
+{% endblock %}

@@ -152,6 +152,24 @@ class BreakingNewsTicker(models.Model):
             raise ValidationError({'ends_at': 'End time must be later than start time.'})
 
 
+class ArticleDailyView(models.Model):
+    DEVICE_TYPES = [('mobile','Mobile'),('tablet','Tablet'),('desktop','Desktop'),('other','Other')]
+    article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name='daily_views')
+    viewed_on = models.DateField(db_index=True)
+    country_code = models.CharField(max_length=2, default='ZZ', help_text='ISO country code from the trusted edge, or ZZ when unavailable.')
+    device_type = models.CharField(max_length=10, choices=DEVICE_TYPES, default='other')
+    view_count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['-viewed_on','-view_count']
+        constraints = [models.UniqueConstraint(fields=['article','viewed_on','country_code','device_type'], name='unique_daily_article_view_dimension')]
+        indexes = [models.Index(fields=['viewed_on','country_code']), models.Index(fields=['viewed_on','device_type'])]
+        verbose_name = 'article analytics'
+        verbose_name_plural = 'article analytics'
+
+    def __str__(self): return f'{self.article} · {self.viewed_on} · {self.view_count} views'
+
+
 class Page(models.Model):
     title = models.CharField(max_length=180)
     slug = models.SlugField(unique=True)
