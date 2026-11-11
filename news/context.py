@@ -1,6 +1,6 @@
 from django.conf import settings
 
-from .models import AdPlacement, Article, BreakingNewsTicker, Category, Page
+from .models import AdPlacement, AdSenseConfiguration, Article, BreakingNewsTicker, Category, Page
 from django.utils import timezone
 
 
@@ -10,6 +10,7 @@ def site(request):
     ads = {item.position: item for item in AdPlacement.objects.filter(active=True)}
     current_time = timezone.now()
     breaking_ticker = BreakingNewsTicker.objects.filter(active=True, starts_at__lte=current_time, ends_at__gt=current_time).first()
+    adsense_config = AdSenseConfiguration.objects.first()
     return {
         'categories': Category.objects.all(),
         'breaking_story': Article.objects.live().filter(breaking=True).first(),
@@ -23,6 +24,7 @@ def site(request):
         'noindex': False,
         'header_ad': ads.get('header'),
         'sidebar_ad': ads.get('sidebar'),
+        'adsense_config': adsense_config,
         'newsletter_enabled': settings.NEWSLETTER_ENABLED,
         'footer_pages': pages,
         'privacy_page': next((page for page in pages if page.slug == 'privacy'), None),

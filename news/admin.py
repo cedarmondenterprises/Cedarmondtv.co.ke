@@ -7,7 +7,7 @@ from django.db.models import Sum
 from django.urls import path
 from django.utils import timezone
 from simple_history.admin import SimpleHistoryAdmin
-from .models import Article, ArticleDailyView, Category, Author, Tag, Subscription, ReaderMessage, AdPlacement, BreakingNewsTicker, LiveBlog, LiveBlogUpdate, Page, Campaign, MediaAsset, DraftRecovery, StoryComment
+from .models import Article, ArticleDailyView, Category, Author, Tag, Subscription, ReaderMessage, AdPlacement, AdSenseConfiguration, BreakingNewsTicker, LiveBlog, LiveBlogUpdate, Page, Campaign, MediaAsset, DraftRecovery, StoryComment
 from .newsletter import queue_campaign
 admin.site.site_header = 'Cedarmond TV · Newsroom'
 admin.site.site_title = 'Cedarmond TV Newsroom'
@@ -224,6 +224,22 @@ class AdPlacementAdmin(admin.ModelAdmin):
         if not obj or not obj.image: return 'Upload a banner image to preview it.'
         from django.utils.html import format_html
         return format_html('<img src="{}" alt="{}" style="max-width:520px;max-height:180px;width:auto;height:auto">',obj.image.url,obj.label)
+
+@admin.register(AdSenseConfiguration)
+class AdSenseConfigurationAdmin(admin.ModelAdmin):
+    list_display=['active','publisher_id','header_slot_id','article_slot_id','updated_at']
+    readonly_fields=['updated_at']
+    fieldsets=[('Google AdSense',{'fields':['active','publisher_id','header_slot_id','article_slot_id'],'description':'This form accepts IDs only. It does not accept JavaScript or HTML. AdSense stays off until the site is approved and privacy/consent requirements are configured.'}),('Record',{'fields':['updated_at'],'classes':['collapse']})]
+
+    def has_add_permission(self,request):
+        return not AdSenseConfiguration.objects.exists() and super().has_add_permission(request)
+
+    def has_delete_permission(self,request,obj=None):
+        return False
+
+    def save_model(self,request,obj,form,change):
+        obj.pk=1
+        super().save_model(request,obj,form,change)
 
 @admin.register(BreakingNewsTicker)
 class BreakingNewsTickerAdmin(admin.ModelAdmin):

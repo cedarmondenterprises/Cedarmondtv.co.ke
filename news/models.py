@@ -8,7 +8,7 @@ from .editor import EXTENSIONS, sanitize_html
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils import timezone
-from django.core.validators import FileExtensionValidator, MinValueValidator, MaxValueValidator
+from django.core.validators import FileExtensionValidator, MinValueValidator, MaxValueValidator, RegexValidator
 from django.core.exceptions import ValidationError
 
 def image_size(value):
@@ -202,6 +202,32 @@ class AdPlacement(models.Model):
     destination = models.URLField()
     active = models.BooleanField(default=True)
     def __str__(self): return self.label
+
+
+class AdSenseConfiguration(models.Model):
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
+    active = models.BooleanField(default=False, help_text='Leave off until the site is approved by AdSense and the privacy notice and required consent choices are in place.')
+    publisher_id = models.CharField(max_length=23, blank=True, validators=[RegexValidator(r'^ca-pub-\d{16}$', 'Enter a Google publisher ID in the form ca-pub-1234567890123456.')], help_text='Publisher ID only. Never paste script or HTML here.')
+    header_slot_id = models.CharField(max_length=20, blank=True, validators=[RegexValidator(r'^\d{6,20}$', 'Enter the numeric ad unit ID from AdSense.')])
+    article_slot_id = models.CharField(max_length=20, blank=True, validators=[RegexValidator(r'^\d{6,20}$', 'Enter the numeric ad unit ID from AdSense.')])
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'AdSense configuration'
+        verbose_name_plural = 'AdSense configuration'
+
+    def __str__(self): return 'Google AdSense settings'
+
+    def clean(self):
+        super().clean()
+        if self.pk != 1:
+            raise ValidationError('Only the single site-wide AdSense configuration is allowed.')
+        if self.active and (not self.publisher_id or not (self.header_slot_id or self.article_slot_id)):
+            raise ValidationError('To enable AdSense, provide a publisher ID and at least one ad unit ID.')
+
+    def save(self,*args,**kwargs):
+        self.pk = 1
+        super().save(*args,**kwargs)
 
 
 class BreakingNewsTicker(models.Model):

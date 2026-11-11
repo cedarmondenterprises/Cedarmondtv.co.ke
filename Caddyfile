@@ -1,5 +1,10 @@
 {$DOMAIN} {
     encode zstd gzip
+    header {
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        -Server
+    }
     request_body {
         max_size 10MB
     }

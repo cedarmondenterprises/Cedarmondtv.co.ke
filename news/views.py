@@ -407,3 +407,11 @@ def health(request):
 
 def robots(request):
     return HttpResponse('User-agent: *\nDisallow: /admin/\nDisallow: /api/\nSitemap: '+settings.SITE_URL+'/sitemap.xml\n',content_type='text/plain')
+
+def ads_txt(request):
+    from .models import AdSenseConfiguration
+    config=AdSenseConfiguration.objects.first()
+    if not config or not config.publisher_id:
+        return HttpResponse('',content_type='text/plain')
+    publisher=config.publisher_id.removeprefix('ca-pub-')
+    return HttpResponse(f'google.com, pub-{publisher}, DIRECT, f08c47fec0942fa0\n',content_type='text/plain')

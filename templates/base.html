@@ -26,8 +26,9 @@
 <link rel="stylesheet" href="{% static 'footer.css' %}">
 <link rel="stylesheet" href="{% static 'ticker.css' %}">
 <link rel="alternate" type="application/rss+xml" title="Cedarmond TV" href="{% url 'feed' %}">
+{% if adsense_config and adsense_config.active and adsense_config.publisher_id and request.path == '/' or adsense_config and adsense_config.active and adsense_config.publisher_id and request.path|slice:':7' == '/story/' %}<link rel="stylesheet" href="{% static 'adsense.css' %}"><script nonce="{{ request.csp_nonce }}" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_config.publisher_id }}" crossorigin="anonymous"></script><script nonce="{{ request.csp_nonce }}" defer src="{% static 'adsense.js' %}"></script>{% endif %}
 {% block meta %}{% endblock %}
-<script defer src="{% static 'site.js' %}"></script>
+<script nonce="{{ request.csp_nonce }}" defer src="{% static 'site.js' %}"></script>
 </head>
 <body><a class="skip" href="#content">Skip to content</a><div class="utility"><div class="wrap"><span>KENYA, IN PERSPECTIVE.</span><div>{% if about_page %}<a href="{{ about_page.get_absolute_url }}">About us</a>{% endif %}<a href="{% url 'contact' %}">Contact</a>{% if newsletter_enabled %}<a href="{% url 'newsletter' %}">The daily briefing ↗</a>{% endif %}</div></div></div>
 <header class="wrap masthead"><div class="edition"><span class="red-dot"></span> THE KENYA EDITION<br><span class="date">{% now 'l, j F Y' %}</span></div><a class="wordmark" href="/" aria-label="Cedarmond TV home">CEDARMOND<span>TV</span><small>Independent journalism. A wider perspective.</small></a>{% if newsletter_enabled %}<a class="briefing" href="{% url 'newsletter' %}">Get the briefing <span>↗</span></a>{% else %}<a class="briefing" href="{% url 'contact' %}">Contact</a>{% endif %}</header>

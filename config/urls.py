@@ -42,5 +42,6 @@ urlpatterns = [
     }}),
     path('robots.txt', views.robots),
     path('healthz/', views.health),
+    path('ads.txt', views.ads_txt, name='ads_txt'),
 ]
 if settings.DEBUG: urlpatterns += static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)

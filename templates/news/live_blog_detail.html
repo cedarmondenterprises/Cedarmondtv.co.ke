@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block meta %}<script type="application/ld+json">{{ live_blog_schema_json|safe }}</script><link rel="stylesheet" href="{% static 'liveblogs.css' %}"><script defer src="{% static 'liveblogs.js' %}"></script>{% endblock %}
+{% block meta %}<script nonce="{{ request.csp_nonce }}" type="application/ld+json">{{ live_blog_schema_json|safe }}</script><link rel="stylesheet" href="{% static 'liveblogs.css' %}"><script nonce="{{ request.csp_nonce }}" defer src="{% static 'liveblogs.js' %}"></script>{% endblock %}
 {% block content %}
 <article class="live-article" data-live-status="{{ live_blog.status }}" data-updates-url="{% url 'live_blog_updates' live_blog.slug %}" data-last-update-id="{{ last_update_id }}">
   <a class="live-back" href="{% url 'live_blogs' %}">← All live coverage</a>

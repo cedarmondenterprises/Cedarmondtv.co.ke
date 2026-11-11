@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}{{ seo_title }}{% endblock %}
 {% block description %}{{ seo_description }}{% endblock %}
-{% block meta %}<meta property="article:published_time" content="{{ article.published_at|date:'c' }}"><meta property="article:modified_time" content="{{ article.updated_at|date:'c' }}"><meta property="article:section" content="{{ article.category.name }}">{% for tag in article.tags.all %}<meta property="article:tag" content="{{ tag.name }}">{% endfor %}<script type="application/ld+json">{{ schema_json|safe }}</script><script type="application/ld+json">{{ breadcrumb_schema_json|safe }}</script>{% endblock %}
+{% block meta %}<meta property="article:published_time" content="{{ article.published_at|date:'c' }}"><meta property="article:modified_time" content="{{ article.updated_at|date:'c' }}"><meta property="article:section" content="{{ article.category.name }}">{% for tag in article.tags.all %}<meta property="article:tag" content="{{ tag.name }}">{% endfor %}<script nonce="{{ request.csp_nonce }}" type="application/ld+json">{{ schema_json|safe }}</script><script nonce="{{ request.csp_nonce }}" type="application/ld+json">{{ breadcrumb_schema_json|safe }}</script>{% endblock %}
 {% block content %}
 <div class="reading-progress" aria-hidden="true"></div>
 <div class="breadcrumb"><a href="/">Home</a> / <a href="{{ article.category.get_absolute_url }}">{{ article.category.name }}</a></div>
@@ -29,7 +29,7 @@
       </form>
     </section>{% endif %}
   </div>
-  {% if newsletter_enabled or sidebar_ad %}<aside class="article-aside">{% if newsletter_enabled %}<h2>A wider perspective.</h2><p>Get the stories behind the headlines in the Cedarmond briefing.</p><a href="{% url 'newsletter' %}" class="button">Join the briefing →</a>{% endif %}{% if sidebar_ad %}<div class="advertisement"><span>ADVERTISEMENT</span><a href="{{ sidebar_ad.destination }}" rel="sponsored noopener"><img src="{{ sidebar_ad.image.url }}" alt="{{ sidebar_ad.label }}"></a></div>{% endif %}</aside>{% endif %}
+  {% if newsletter_enabled or sidebar_ad or adsense_config and adsense_config.active and adsense_config.article_slot_id %}<aside class="article-aside">{% if newsletter_enabled %}<h2>A wider perspective.</h2><p>Get the stories behind the headlines in the Cedarmond briefing.</p><a href="{% url 'newsletter' %}" class="button">Join the briefing →</a>{% endif %}{% if sidebar_ad %}<div class="advertisement"><span>ADVERTISEMENT</span><a href="{{ sidebar_ad.destination }}" rel="sponsored noopener"><img src="{{ sidebar_ad.image.url }}" alt="{{ sidebar_ad.label }}"></a></div>{% endif %}{% if adsense_config and adsense_config.active and adsense_config.article_slot_id %}<div class="advertisement adsense-placement adsense-sidebar" aria-label="Advertisement"><span>ADVERTISEMENT</span><ins class="adsbygoogle" data-ad-client="{{ adsense_config.publisher_id }}" data-ad-slot="{{ adsense_config.article_slot_id }}" data-ad-format="auto" data-full-width-responsive="true"></ins></div>{% endif %}</aside>{% endif %}
   </div>
 </article>
 {% if related %}<section class="more-news"><div class="section-heading"><h2>Keep reading</h2></div><div class="card-grid">{% for item in related %}{% include 'news/card.html' %}{% endfor %}</div></section>{% endif %}
