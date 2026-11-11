@@ -8,6 +8,61 @@ Use a supported Ubuntu release with Docker Engine and the Compose plugin. Point 
 
 Run `bash scripts/deploy.sh`, then create the first superuser. The script validates Compose, starts PostgreSQL/Valkey, builds images, applies migrations, creates permission groups and waits for services. No accounts, demo stories or policies are inserted.
 
+
+## Private preview on the existing AWS VM (no DNS or new public ports)
+
+For mobile visual review before a production launch, use the opt-in preview Compose
+override. It runs Django, PostgreSQL and Valkey as a separate Docker Compose
+project, binds HTTP to the VM loopback only, and does not start the repository's
+Caddy or mail worker. It leaves an existing Patapesa deployment untouched.
+
+```bash
+git clone https://github.com/cedarmondenterprises/Cedarmondtv.co.ke.git
+cd Cedarmondtv.co.ke
+bash scripts/preview.sh
+```
+
+From an Android phone with Termux, keep an authenticated SSH forwarding session
+open using the SSH host/alias already configured for that same VM:
+
+```bash
+ssh -N -L 18080:127.0.0.1:18080 YOUR_EXISTING_AWS_SSH_HOST
+```
+
+In the phone browser open `http://127.0.0.1:18080/`. Your phone's local
+port is securely forwarded to the VM through SSH. To change the port on
+both ends, set `CEDARMOND_PREVIEW_PORT=18081` when running the script and
+change the tunnel ports to 18081.
+
+The preview deliberately uses `DEBUG=1` **only inside a loopback-only
+endpoint**. Never expose port 18080 in the AWS security group, publish it
+on `0.0.0.0`, or configure a public reverse proxy to this preview.
+Use the production deployment for public HTTPS. Debug exceptions can reveal
+information. Real production content and subscriber records should not be
+imported into the preview.
+
+The initial homepage says "No stories have been published yet" until real
+articles are created in the preview database. To create an administrator:
+
+```bash
+docker compose -p cedarmondtv-preview -f compose.yaml -f compose.preview.yaml exec web python manage.py createsuperuser
+```
+
+Useful status and troubleshooting commands:
+
+```bash
+docker compose -p cedarmondtv-preview -f compose.yaml -f compose.preview.yaml ps
+docker compose -p cedarmondtv-preview -f compose.yaml -f compose.preview.yaml logs --tail=100 web
+curl -fsS http://127.0.0.1:18080/healthz/
+```
+
+For the next preview update, run `git pull --ff-only && bash scripts/preview.sh`.
+Stopping the preview without deleting its database/media:
+
+```bash
+docker compose -p cedarmondtv-preview -f compose.yaml -f compose.preview.yaml down
+```
+
 ## Existing applications on the same VM
 
 The bundled Caddy owns ports 80/443. If an existing proxy serves Patapesa or another application, do not start the second proxy on those ports. Join Cedarmond's `web` service to the existing proxy's Docker network, configure a host route to it on port 8000, and mount Cedarmond's media volume read-only for `/media/`. Use an unambiguous upstream service alias if both projects name their service `web`. Keep PostgreSQL/Valkey private. The app trusts forwarding headers only with `TRUST_PROXY_HEADERS=1`; the upstream proxy must overwrite them and the application must not have a public host port.
