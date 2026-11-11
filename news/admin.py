@@ -9,6 +9,7 @@ from .newsletter import queue_campaign
 admin.site.site_header = 'Cedarmond TV · Newsroom'
 admin.site.site_title = 'Cedarmond TV Newsroom'
 admin.site.index_title = 'Publishing desk'
+admin.site.index_template = 'admin/newsroom_index.html'
 
 class ArticleAdminForm(forms.ModelForm):
     recovery_key=forms.CharField(required=False,widget=forms.HiddenInput)
@@ -157,7 +158,25 @@ class CampaignAdmin(admin.ModelAdmin):
             try: count=queue_campaign(campaign.pk)
             except ValueError as exc: self.message_user(request,str(exc),level=messages.ERROR)
             else: self.message_user(request,f'{count} messages queued for {campaign.subject}.')
-admin.site.register(AdPlacement)
+@admin.register(AdPlacement)
+class AdPlacementAdmin(admin.ModelAdmin):
+    list_display = ['label','placement','active','destination']
+    list_filter = ['position','active']
+    list_editable = ['active']
+    search_fields = ['label','destination']
+    readonly_fields = ['preview']
+    ordering = ['position','label']
+    fieldsets = [(None,{'fields':['label','position','destination','image','preview','active'],'description':'Choose a site position, upload the advertiser-approved banner, add its destination URL, then activate it. Current positions are the homepage banner and article sidebar. Only active placements appear publicly.'})]
+
+    @admin.display(description='Placement')
+    def placement(self,obj):
+        return obj.get_position_display()
+
+    @admin.display(description='Preview')
+    def preview(self,obj):
+        if not obj or not obj.image: return 'Upload a banner image to preview it.'
+        from django.utils.html import format_html
+        return format_html('<img src="{}" alt="{}" style="max-width:520px;max-height:180px;width:auto;height:auto">',obj.image.url,obj.label)
 
 @admin.register(StoryComment)
 class StoryCommentAdmin(admin.ModelAdmin):

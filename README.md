@@ -44,6 +44,12 @@ New installations start with **no articles**. The empty state is honest. The new
 
 The newsroom also includes CMS-style editorial cards, a monthly assignment/deadline desk, private review discussions, browser draft recovery, stale-edit detection, reusable rights-attributed media, and permanent redirects for changed story URLs. Readers can comment on published articles; comments are rate limited, held for editor approval, and rendered as escaped text. Search covers story text, authors, sections and topics. The public homepage and archives use responsive red-and-white story cards. These workflows use the existing Django admin, database and open-source packages; there is no separate SaaS dependency.
 
+The newsroom landing page now leads with staff actions instead of dropping editors into a model list. The public navigation has a mobile section menu and a direct Latest route. Archive pagination retains active search and section filters. Page transitions run only where the browser supports them and the visitor has not requested reduced motion. We use Django's built-in admin templates and existing editor widgets rather than adding a second admin theme stack.
+
+## Plug in a direct advertisement
+
+Sign in to `/admin/` and choose **Ads and sponsorships** (or **Ad placements** from the editorial desk). Create or edit one creative for each available slot: **Homepage banner** and **Article sidebar**. Upload an approved JPG, PNG or WebP banner, enter its destination URL and label, then activate the placement. Only active placements appear on the public site. The current implementation supports image banners for direct-sold placements; it does not claim to track impressions or clicks. A separate ad server is unnecessary for this initial setup.
+
 ## Public API
 
 The read-only API exposes original Cedarmond TV content after publication. It does not import or republish content from other publishers. Drafts, future stories, internal assignment notes, reporter ownership, and unapproved reader comments are excluded. Anonymous traffic is throttled to 600 requests per hour per client IP; pagination defaults to 20 and is capped at 50.

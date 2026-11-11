@@ -38,7 +38,10 @@ def listing(request,kind=None,slug=None):
     query = request.GET.get('q','').strip()[:120]
     if query:
         articles = articles.filter(Q(title__icontains=query)|Q(summary__icontains=query)|Q(body__icontains=query)|Q(author__name__icontains=query)|Q(category__name__icontains=query)|Q(tags__name__icontains=query)).distinct(); title = 'Search results'
-    return render(request,'news/list.html',{'page':Paginator(articles,9).get_page(request.GET.get('page')),'title':title,'description':description,'query':query})
+    page=Paginator(articles,9).get_page(request.GET.get('page'))
+    pagination_params=request.GET.copy()
+    pagination_params.pop('page',None)
+    return render(request,'news/list.html',{'page':page,'title':title,'description':description,'query':query,'pagination_query':pagination_params.urlencode()})
 
 def article(request,slug):
     item = Article.objects.live().prefetch_related('tags').filter(slug=slug).first()

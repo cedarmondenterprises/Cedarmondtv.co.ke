@@ -1,0 +1,25 @@
+{% extends 'admin/index.html' %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin_newsroom.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="newsroom-home" aria-labelledby="newsroom-home-title">
+  <div class="newsroom-home-intro">
+    <p class="newsroom-kicker">CEDARMOND TV · NEWSROOM</p>
+    <h1 id="newsroom-home-title">What would you like to do?</h1>
+    <p>Publishing, review and site management in one place.</p>
+  </div>
+  <nav class="newsroom-home-actions" aria-label="Newsroom shortcuts">
+    {% if perms.news.add_article %}<a class="newsroom-action newsroom-action-primary" href="{% url 'admin:news_article_add' %}"><strong>Write a story</strong><span>Start a draft and add reporting details.</span></a>{% endif %}
+    {% if perms.news.view_article %}<a class="newsroom-action" href="{% url 'admin:news_article_desk' %}"><strong>Editorial desk</strong><span>Review submissions, deadlines and saved drafts.</span></a><a class="newsroom-action" href="{% url 'admin:news_article_changelist' %}"><strong>Manage stories</strong><span>Find, edit, schedule or publish articles.</span></a>{% endif %}
+    {% if perms.news.view_mediaasset %}<a class="newsroom-action" href="{% url 'admin:news_mediaasset_changelist' %}"><strong>Media library</strong><span>Manage credited and rights-documented images.</span></a>{% endif %}
+    {% if perms.news.view_adplacement %}<a class="newsroom-action" href="{% url 'admin:news_adplacement_changelist' %}"><strong>Ads and sponsorships</strong><span>Upload creative and assign a live site placement.</span></a>{% endif %}
+    {% if perms.news.view_storycomment %}<a class="newsroom-action" href="{% url 'admin:news_storycomment_changelist' %}?status__exact=pending"><strong>Reader comments</strong><span>Review comments waiting for moderation.</span></a>{% endif %}
+  </nav>
+</section>
+{{ block.super }}
+{% endblock %}

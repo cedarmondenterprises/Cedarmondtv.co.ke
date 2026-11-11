@@ -56,7 +56,7 @@ def desk(request,admin_site):
     for recovery in recoveries.select_related('article')[:20]:
         path=reverse('admin:news_article_change',args=[recovery.article_id]) if recovery.article_id else reverse('admin:news_article_add')
         recovery_rows.append({'id':recovery.pk,'title':recovery.data.get('title') or 'Untitled draft','url':path+'?recovery='+str(recovery.pk),'saved_at':recovery.saved_at})
-    context=dict(admin_site.each_context(request),title='Editorial calendar and assignments',events=events,month=month,previous=previous.strftime('%Y-%m'),next_month=next_month.strftime('%Y-%m'),recoveries=recovery_rows,review_queue=articles.filter(status='review').order_by('deadline','published_at')[:30],can_moderate_comments=request.user.has_perm('news.view_storycomment'),pending_comments=StoryComment.objects.filter(status=StoryComment.PENDING).count() if request.user.has_perm('news.view_storycomment') else None)
+    context=dict(admin_site.each_context(request),title='Editorial calendar and assignments',events=events,month=month,previous=previous.strftime('%Y-%m'),next_month=next_month.strftime('%Y-%m'),recoveries=recovery_rows,review_queue=articles.filter(status='review').order_by('deadline','published_at')[:30],can_moderate_comments=request.user.has_perm('news.view_storycomment'),can_manage_ads=request.user.has_perm('news.view_adplacement'),pending_comments=StoryComment.objects.filter(status=StoryComment.PENDING).count() if request.user.has_perm('news.view_storycomment') else None)
     return TemplateResponse(request,'admin/news/desk.html',context)
 
 

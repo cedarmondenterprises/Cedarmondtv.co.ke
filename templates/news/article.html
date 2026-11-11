@@ -10,7 +10,7 @@
   <span class="eyebrow">{{ article.category.name }}</span><h1>{{ article.title }}</h1><p class="article-summary">{{ article.summary }}</p>
   <div class="byline"><span class="avatar">{{ article.author.name|slice:':1' }}</span><div><a href="{{ article.author.get_absolute_url }}">{{ article.author.name }}</a><p class="meta">{{ article.published_at|date:'j F Y, H:i' }} EAT · {{ article.reading_minutes }} min read</p></div></div>
   {% if article.display_image %}<figure>{% include 'news/image.html' with item=article eager=True %}{% if article.display_credit %}<figcaption>{{ article.display_credit }}</figcaption>{% endif %}</figure>{% endif %}
-  <div class="article-columns"><div class="article-main">
+  <div class="article-columns{% if not newsletter_enabled and not sidebar_ad %} article-columns-wide{% endif %}"><div class="article-main">
     <div class="share"><a href="https://wa.me/?text={{ share_text }}" rel="noopener" target="_blank">WhatsApp ↗</a><button id="copy-link" type="button">Copy link</button><button id="save-story" data-slug="{{ article.slug }}" type="button" aria-pressed="false">Save story</button><span id="share-status" role="status"></span></div>
     <div class="prose">{{ article.rendered_body|safe }}</div>
     <div class="tags">{% for tag in article.tags.all %}<a href="{% url 'tag' tag.slug %}">{{ tag.name }}</a>{% endfor %}</div>
