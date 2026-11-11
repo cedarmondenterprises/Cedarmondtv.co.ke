@@ -5,7 +5,7 @@ import uuid
 from datetime import date, datetime, time, timedelta
 from django import forms
 from django.contrib import messages
-from django.contrib.admin.models import LogEntry, CHANGE
+from django.contrib.admin.models import LogEntry, ADDITION
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.db.models import Q
@@ -157,7 +157,8 @@ def restore_revision(request,pk,version,admin_site):
             restored._history_user=request.user
             restored._change_reason=f'Text restored from article {article.pk}, revision {revision.history_id}; current author/category/topics retained.'
             restored.save();restored.tags.set(article.tags.all())
-            LogEntry.objects.log_actions(user_id=request.user.pk,queryset=[restored],action_flag=CHANGE,change_message=restored._change_reason)
+            LogEntry.objects.log_actions(user_id=request.user.pk,queryset=[restored],action_flag=ADDITION,change_message=restored._change_reason)
         messages.success(request,'Revision text restored as a new unpublished draft. The original article is unchanged.')
         return redirect('admin:news_article_change',object_id=restored.pk)
     return TemplateResponse(request,'admin/news/restore.html',dict(admin_site.each_context(request),title='Restore revision text as a new draft',article=article,revision=revision))
+
