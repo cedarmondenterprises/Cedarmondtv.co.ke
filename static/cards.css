@@ -15,3 +15,20 @@
 .picks .story-card{box-shadow:none}
 .story-card:hover{box-shadow:0 6px 18px rgba(24,22,20,.09)}
 @media(max-width:650px){.top-stories .story-card{padding:0 0 12px}.top-stories .story-card+.story-card{padding-top:0;margin:0;border:0}.top-stories .story-card .eyebrow,.top-stories .story-card h3,.top-stories .story-card .meta{margin-left:10px;margin-right:10px}.top-stories .story-card h3{font-size:18px}.card-grid .story-card{padding:0 0 18px;background:white;border-radius:3px;box-shadow:none}.card-grid .story-card .eyebrow,.card-grid .story-card h3,.card-grid .story-card .meta{margin-left:0;margin-right:0}.card-grid .story-card .card-image{margin:0}.card-grid .story-card .meta{font-size:9px}.latest{padding:15px}.latest article{padding:13px}}
+.reader-comments{margin-top:42px;padding-top:26px;border-top:1px solid #e8e5e1;scroll-margin-top:22px}
+.reader-comments .section-heading{margin-bottom:16px}
+.comment-intro,.comment-empty{color:#626367;font-size:13px}
+.comment-list{display:grid;gap:12px;margin:20px 0}
+.comment-card{padding:16px 18px;background:#faf9f7;border:1px solid #e8e5e1;border-radius:3px;font-size:14px;overflow-wrap:anywhere}
+.comment-card header{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:8px}
+.comment-card header strong{font-size:13px}
+.comment-card time{font-size:10px;color:#696b70}
+.comment-form{display:grid;gap:16px;margin-top:22px;padding:20px;background:#faf9f7;border:1px solid #e8e5e1;border-radius:3px}
+.comment-field{display:grid;gap:7px}
+.comment-field label,.comment-consent label{font-size:12px;font-weight:700}
+.comment-field input,.comment-field textarea{width:100%;padding:11px 12px;border:1px solid #c9c7c3;background:#fff;border-radius:2px}
+.comment-consent{display:flex;align-items:flex-start;gap:9px}
+.comment-consent input{margin-top:2px;accent-color:var(--red)}
+.comment-consent label{font-weight:400;color:#555}
+.comment-form .errorlist{margin:0}
+@media(max-width:650px){.reader-comments{margin-top:32px;padding-top:22px}.comment-form{padding:15px}.comment-card{padding:13px}.comment-card header{align-items:flex-start;flex-direction:column;gap:3px}}

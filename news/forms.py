@@ -9,3 +9,9 @@ class ContactForm(forms.ModelForm):
     class Meta:
         model = ReaderMessage
         fields = ['name','email','subject','message']
+
+class StoryCommentForm(forms.Form):
+    display_name=forms.CharField(max_length=80,label='Name',widget=forms.TextInput(attrs={'autocomplete':'name','maxlength':'80'}))
+    body=forms.CharField(max_length=2000,label='Comment',widget=forms.Textarea(attrs={'rows':5,'maxlength':'2000'}))
+    consent=forms.BooleanField(label='I agree to the comment guidelines and understand my comment is reviewed before publication.')
+    website=forms.CharField(required=False,widget=forms.HiddenInput)

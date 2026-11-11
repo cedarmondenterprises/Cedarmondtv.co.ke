@@ -4,7 +4,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.urls import path
 from simple_history.admin import SimpleHistoryAdmin
-from .models import Article, Category, Author, Tag, Subscription, ReaderMessage, AdPlacement, Page, Campaign, MediaAsset, DraftRecovery
+from .models import Article, Category, Author, Tag, Subscription, ReaderMessage, AdPlacement, Page, Campaign, MediaAsset, DraftRecovery, StoryComment
 from .newsletter import queue_campaign
 admin.site.site_header = 'Cedarmond TV · Newsroom'
 admin.site.site_title = 'Cedarmond TV Newsroom'
@@ -158,6 +158,28 @@ class CampaignAdmin(admin.ModelAdmin):
             except ValueError as exc: self.message_user(request,str(exc),level=messages.ERROR)
             else: self.message_user(request,f'{count} messages queued for {campaign.subject}.')
 admin.site.register(AdPlacement)
+
+@admin.register(StoryComment)
+class StoryCommentAdmin(admin.ModelAdmin):
+    list_display=['created_at','display_name','article','status','moderated_by']
+    list_filter=['status','created_at']
+    search_fields=['display_name','body','article__title']
+    date_hierarchy='created_at'
+    readonly_fields=['article','display_name','body','status','created_at','moderated_at','moderated_by']
+    actions=['approve_comments','reject_comments']
+    def has_add_permission(self,request): return False
+    @admin.action(description='Approve selected comments',permissions=['change'])
+    def approve_comments(self,request,queryset):
+        if not request.user.has_perm('news.change_storycomment'): raise PermissionDenied
+        from django.utils import timezone
+        count=queryset.filter(status=StoryComment.PENDING).update(status=StoryComment.APPROVED,moderated_at=timezone.now(),moderated_by=request.user)
+        self.message_user(request,f'{count} comments approved.')
+    @admin.action(description='Reject selected comments',permissions=['change'])
+    def reject_comments(self,request,queryset):
+        if not request.user.has_perm('news.change_storycomment'): raise PermissionDenied
+        from django.utils import timezone
+        count=queryset.filter(status=StoryComment.PENDING).update(status=StoryComment.REJECTED,moderated_at=timezone.now(),moderated_by=request.user)
+        self.message_user(request,f'{count} comments rejected.')
 
 @admin.register(MediaAsset)
 class MediaAssetAdmin(admin.ModelAdmin):

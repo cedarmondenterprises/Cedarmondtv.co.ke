@@ -199,3 +199,20 @@ class DraftRecovery(models.Model):
     saved_at = models.DateTimeField(auto_now=True)
     class Meta:
         ordering=['-saved_at']
+
+class StoryComment(models.Model):
+    PENDING='pending'
+    APPROVED='approved'
+    REJECTED='rejected'
+    STATUS_CHOICES=[(PENDING,'Awaiting moderation'),(APPROVED,'Approved'),(REJECTED,'Rejected')]
+    article=models.ForeignKey(Article,on_delete=models.CASCADE,related_name='reader_comments')
+    display_name=models.CharField(max_length=80)
+    body=models.TextField(max_length=2000)
+    status=models.CharField(max_length=10,choices=STATUS_CHOICES,default=PENDING,db_index=True)
+    created_at=models.DateTimeField(auto_now_add=True,db_index=True)
+    moderated_at=models.DateTimeField(null=True,blank=True)
+    moderated_by=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL,null=True,blank=True)
+    class Meta:
+        ordering=['-created_at','-pk']
+        indexes=[models.Index(fields=['article','status','-created_at'])]
+    def __str__(self): return f'{self.display_name} on {self.article}'

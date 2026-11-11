@@ -41,7 +41,7 @@ See [OPEN_SOURCE.md](docs/OPEN_SOURCE.md) for upstream projects and licenses. Py
 
 New installations start with **no articles**. The empty state is honest. The newsroom must publish real reporting and approved informational pages before public launch. Newsletter calls to action are absent until `NEWSLETTER_ENABLED=1`; without configuration the app does not claim that email delivery is available.
 
-The newsroom also includes CMS-style editorial cards, a monthly assignment/deadline desk, private review discussions, browser draft recovery, stale-edit detection, reusable rights-attributed media, and permanent redirects for changed story URLs. The public homepage and archives use responsive red-and-white story cards. These workflows use the existing Django admin, database and open-source packages; there is no separate SaaS dependency.
+The newsroom also includes CMS-style editorial cards, a monthly assignment/deadline desk, private review discussions, browser draft recovery, stale-edit detection, reusable rights-attributed media, and permanent redirects for changed story URLs. Readers can comment on published articles; comments are rate limited, held for editor approval, and rendered as escaped text. Search covers story text, authors, sections and topics. The public homepage and archives use responsive red-and-white story cards. These workflows use the existing Django admin, database and open-source packages; there is no separate SaaS dependency.
 
 ## Local development
 
@@ -78,7 +78,7 @@ Caddy obtains HTTPS certificates after DNS and network access are correct. Postg
 1. Run `setup_newsroom` to create sections and Reporter/Editor groups (no users or content).
 2. Create staff users and assign groups. Reporters own new stories. Editors can publish/schedule and manage author records.
 3. Create an author profile. Write a draft with original reporting, summary, category, tags, image credit and alt text.
-4. Open **Editorial desk** from the article list to see deadlines, assignments, review cards and private draft-recovery copies. Add review notes in the story’s **Editorial discussion** workspace.
+4. Open **Editorial desk** from the article list to see deadlines, assignments, review cards, private draft-recovery copies and pending reader comments. Add review notes in the story’s **Editorial discussion** workspace. Approve or reject reader comments from the **Reader comments** queue before they appear publicly.
 5. Open **Private preview** from the article form. Submit drafts for review from the article list. Draft text is recovered privately in the browser; uploads and publishing settings still need the normal Save action.
 6. Editors set status to Published and choose a publication date. Future dates are enforced in every public query. The article’s history view can restore prior story text as a new unpublished draft.
 7. Create approved About, privacy and editorial policy entries under **Pages**; publish them to expose footer links. Nothing is pre-filled with invented policies.

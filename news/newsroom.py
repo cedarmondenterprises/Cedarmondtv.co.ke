@@ -17,7 +17,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 from django.views.decorators.http import require_http_methods
 from .editor import sanitize_html
-from .models import Article, DraftRecovery, EditorialComment
+from .models import Article, DraftRecovery, EditorialComment, StoryComment
 from .permissions import can_view_article, can_edit_article
 
 
@@ -56,7 +56,7 @@ def desk(request,admin_site):
     for recovery in recoveries.select_related('article')[:20]:
         path=reverse('admin:news_article_change',args=[recovery.article_id]) if recovery.article_id else reverse('admin:news_article_add')
         recovery_rows.append({'id':recovery.pk,'title':recovery.data.get('title') or 'Untitled draft','url':path+'?recovery='+str(recovery.pk),'saved_at':recovery.saved_at})
-    context=dict(admin_site.each_context(request),title='Editorial calendar and assignments',events=events,month=month,previous=previous.strftime('%Y-%m'),next_month=next_month.strftime('%Y-%m'),recoveries=recovery_rows,review_queue=articles.filter(status='review').order_by('deadline','published_at')[:30])
+    context=dict(admin_site.each_context(request),title='Editorial calendar and assignments',events=events,month=month,previous=previous.strftime('%Y-%m'),next_month=next_month.strftime('%Y-%m'),recoveries=recovery_rows,review_queue=articles.filter(status='review').order_by('deadline','published_at')[:30],can_moderate_comments=request.user.has_perm('news.view_storycomment'),pending_comments=StoryComment.objects.filter(status=StoryComment.PENDING).count() if request.user.has_perm('news.view_storycomment') else None)
     return TemplateResponse(request,'admin/news/desk.html',context)
 
 
@@ -161,4 +161,3 @@ def restore_revision(request,pk,version,admin_site):
         messages.success(request,'Revision text restored as a new unpublished draft. The original article is unchanged.')
         return redirect('admin:news_article_change',object_id=restored.pk)
     return TemplateResponse(request,'admin/news/restore.html',dict(admin_site.each_context(request),title='Restore revision text as a new draft',article=article,revision=revision))
-

@@ -17,8 +17,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
-from .models import Article, ArticleURL, Category, Author, Tag, Subscription, Page
-from .forms import SubscribeForm, ContactForm
+from .models import Article, ArticleURL, Category, Author, Tag, Subscription, Page, StoryComment
+from .forms import SubscribeForm, ContactForm, StoryCommentForm
 
 def home(request):
     live = Article.objects.live()
@@ -37,7 +37,7 @@ def listing(request,kind=None,slug=None):
         obj = get_object_or_404(Tag,slug=slug); articles = articles.filter(tags=obj); title = obj.name
     query = request.GET.get('q','').strip()[:120]
     if query:
-        articles = articles.filter(Q(title__icontains=query)|Q(summary__icontains=query)|Q(body__icontains=query)); title = 'Search results'
+        articles = articles.filter(Q(title__icontains=query)|Q(summary__icontains=query)|Q(body__icontains=query)|Q(author__name__icontains=query)|Q(category__name__icontains=query)|Q(tags__name__icontains=query)).distinct(); title = 'Search results'
     return render(request,'news/list.html',{'page':Paginator(articles,9).get_page(request.GET.get('page')),'title':title,'description':description,'query':query})
 
 def article(request,slug):
@@ -48,11 +48,28 @@ def article(request,slug):
         return redirect(target.get_absolute_url(),permanent=True)
     return render_article(request,item)
 
-def render_article(request,item,preview=False):
+def render_article(request,item,preview=False,comment_form=None,status=200):
     url = settings.SITE_URL + item.get_absolute_url()
     schema = {'@context':'https://schema.org','@type':'NewsArticle','headline':item.title,'description':item.summary,'datePublished':item.published_at.isoformat(),'dateModified':item.updated_at.isoformat(),'author':[{'@type':'Person','name':item.author.name,'url':settings.SITE_URL+item.author.get_absolute_url()}],'publisher':{'@type':'Organization','name':'Cedarmond TV'},'mainEntityOfPage':url}
     if item.display_image: schema['image'] = [settings.SITE_URL+item.display_image.url]
-    return render(request,'news/article.html',{'article':item,'preview':preview,'related':Article.objects.live().filter(category=item.category).exclude(pk=item.pk)[:3],'canonical':url,'share_url':quote(url,safe=''),'share_text':quote(item.title+' '+url,safe=''),'schema_json':json.dumps(schema).replace('<',r'\u003c')})
+    return render(request,'news/article.html',{'article':item,'preview':preview,'related':Article.objects.live().filter(category=item.category).exclude(pk=item.pk)[:3],'reader_comments':item.reader_comments.filter(status=StoryComment.APPROVED)[:50],'comment_count':item.reader_comments.filter(status=StoryComment.APPROVED).count(),'comment_form':comment_form or (None if preview else StoryCommentForm()),'canonical':url,'share_url':quote(url,safe=''),'share_text':quote(item.title+' '+url,safe=''),'schema_json':json.dumps(schema).replace('<',r'\u003c')},status=status)
+
+@require_http_methods(['POST'])
+@ratelimit(key=rate_key,rate='5/h',method='POST',block=False)
+def story_comment(request,slug):
+    item=get_object_or_404(Article.objects.live(),slug=slug)
+    form=StoryCommentForm(request.POST)
+    if form.is_valid():
+        if form.cleaned_data['website']:
+            messages.success(request,'Thank you. Comments are reviewed before they appear.')
+            return redirect(item.get_absolute_url()+'#reader-comments')
+        if getattr(request,'limited',False) or throttled(request,'comment_time'):
+            form.add_error(None,'Please wait before posting another comment.')
+            return render_article(request,item,comment_form=form,status=429)
+        StoryComment.objects.create(article=item,display_name=form.cleaned_data['display_name'].strip(),body=form.cleaned_data['body'].strip())
+        messages.success(request,'Thank you. Your comment is awaiting editorial review.')
+        return redirect(item.get_absolute_url()+'#reader-comments')
+    return render_article(request,item,comment_form=form)
 
 def throttled(request,key):
     now = timezone.now().timestamp()

@@ -13,7 +13,7 @@ from django.contrib.auth.models import User, Group, Permission
 from django.core.management import call_command
 from PIL import Image
 from post_office.models import Email, STATUS
-from .models import Article, ArticleURL, Author, Category, Subscription, ReaderMessage, Page, Campaign, CampaignDelivery, DraftRecovery, EditorialComment
+from .models import Article, ArticleURL, Author, Category, Tag, Subscription, ReaderMessage, Page, Campaign, CampaignDelivery, DraftRecovery, EditorialComment, StoryComment
 from .newsletter import subscription_token, queue_campaign
 
 PRODUCTION_MAIL_CONFIG = settings.POST_OFFICE
@@ -93,6 +93,37 @@ class NewsroomTests(TestCase):
         self.assertContains(self.client.get('/search/?q=verified'),'A verified story')
         self.assertNotContains(self.client.get('/search/?q=unmatched'),'A verified story')
         self.assertEqual(self.client.get('/latest/?page=oops').status_code,200)
+    def test_search_finds_authors_categories_and_topics(self):
+        tag=Tag.objects.create(name='Accountability',slug='accountability');self.article.tags.add(tag)
+        for query in ['News%20desk','Kenya','Accountability']:
+            self.assertContains(self.client.get('/search/?q='+query),'A verified story')
+    def test_reader_comments_are_moderated_and_html_escaped(self):
+        response=self.client.post(f'/story/{self.article.slug}/comments/',{'display_name':'Reader One','body':'<script>alert(1)</script> Thoughtful point.','consent':'on','website':''})
+        self.assertEqual(response.status_code,302)
+        comment=StoryComment.objects.get();self.assertEqual(comment.status,StoryComment.PENDING)
+        public=self.client.get(self.article.get_absolute_url())
+        self.assertNotContains(public,'Thoughtful point')
+        self.assertContains(public,'Reader discussion')
+        editor=User.objects.create_superuser('moderator','moderator@example.com','a-long-test-password');self.client.force_login(editor)
+        response=self.client.post('/admin/news/storycomment/',{'action':'approve_comments','_selected_action':[str(comment.pk)],'index':'0'})
+        self.assertEqual(response.status_code,302)
+        comment.refresh_from_db();self.assertEqual(comment.status,StoryComment.APPROVED);self.assertEqual(comment.moderated_by,editor)
+        public=self.client.get(self.article.get_absolute_url())
+        self.assertContains(public,'Thoughtful point')
+        self.assertNotContains(public,'<script>alert(1)</script>')
+    def test_comment_honeypot_and_missing_consent_do_not_save(self):
+        url=f'/story/{self.article.slug}/comments/'
+        response=self.client.post(url,{'display_name':'Spam bot','body':'Spam','consent':'on','website':'https://spam.example'})
+        self.assertEqual(response.status_code,302)
+        self.assertFalse(StoryComment.objects.exists())
+        response=self.client.post(url,{'display_name':'Reader','body':'No consent','website':''})
+        self.assertEqual(response.status_code,200)
+        self.assertFalse(StoryComment.objects.exists())
+    def test_comments_only_accept_for_live_articles(self):
+        self.article.status='draft';self.article.save()
+        response=self.client.post(f'/story/{self.article.slug}/comments/',{'display_name':'Reader','body':'Draft comment','consent':'on','website':''})
+        self.assertEqual(response.status_code,404)
+        self.assertFalse(StoryComment.objects.exists())
     def test_rich_text_retains_formatting_and_removes_active_content(self):
         self.article.title='</script><script>alert(1)</script>'
         self.article.body='<h2>Context</h2><p><strong>Important</strong></p><script>alert(1)</script><a href="javascript:alert(1)">bad</a>'
