@@ -64,6 +64,7 @@ p.chmod(0o600)
 PY
 
 export COMPOSE_PROJECT_NAME=cedarmondtv-public
+export COMPOSE_FILE=compose.yaml:compose.public.yaml
 echo "Deploying Cedarmond TV at ${url}"
 echo "This is an independent production-configured Compose stack, not the DEBUG=1 local preview."
 echo "AWS security group must allow inbound TCP 80 and 443 from the Internet."
