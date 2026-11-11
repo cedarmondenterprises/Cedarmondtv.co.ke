@@ -5,6 +5,7 @@ from .models import AdPlacement, Article, Category, Page
 
 def site(request):
     pages = list(Page.objects.filter(published=True).defer('body'))
+    pages_by_slug = {page.slug: page for page in pages}
     ads = {item.position: item for item in AdPlacement.objects.filter(active=True)}
     return {
         'categories': Category.objects.all(),
@@ -22,4 +23,9 @@ def site(request):
         'footer_pages': pages,
         'privacy_page': next((page for page in pages if page.slug == 'privacy'), None),
         'about_page': next((page for page in pages if page.slug == 'about'), None),
+        'editorial_page': pages_by_slug.get('editorial-standards'),
+        'corrections_page': pages_by_slug.get('corrections'),
+        'advertising_page': pages_by_slug.get('advertising'),
+        'cookies_page': pages_by_slug.get('cookies'),
+        'terms_page': pages_by_slug.get('terms'),
     }

@@ -269,7 +269,7 @@ def contact(request):
             form.save(); messages.success(request,'Your message has reached our editorial inbox.'); return redirect('contact')
     title = 'Talk to the newsroom'
     description = 'Send Cedarmond TV a story tip, correction, advertising enquiry or feedback.'
-    return render(request,'news/form.html',{'form':form,'title':title,'description':description,'seo_title':f'{title} | Cedarmond TV','seo_description':description,'button':'Send message'})
+    return render(request,'news/contact.html',{'form':form,'title':title,'description':description,'seo_title':f'{title} | Cedarmond TV','seo_description':description,'button':'Send message'})
 
 def page(request,slug):
     item=get_object_or_404(Page,slug=slug,published=True)

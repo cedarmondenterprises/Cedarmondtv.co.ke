@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}{{ seo_title }}{% endblock %}
+{% block description %}{{ seo_description }}{% endblock %}
+{% block content %}
+<div class="contact-page">
+  <header class="contact-heading"><span class="eyebrow">CEDARMOND TV · NEWSROOM</span><h1>{{ title }}</h1><p>{{ description }}</p></header>
+  <div class="contact-layout">
+    <section class="contact-form-card" aria-labelledby="contact-form-title">
+      <h2 id="contact-form-title">Send a message</h2>
+      <p>Choose the closest topic so your message can be reviewed by the right person.</p>
+      <form method="post">{% csrf_token %}{{ form.as_p }}<button class="button" type="submit">{{ button }} <span aria-hidden="true">→</span></button></form>
+      {% if privacy_page %}<p class="contact-privacy">Information submitted here is handled under our <a href="{{ privacy_page.get_absolute_url }}">privacy and data notice</a>.</p>{% endif %}
+    </section>
+    <aside class="contact-guidance" aria-label="Contact guidance">
+      <h2>How to help us respond</h2>
+      <div><h3>Story tips</h3><p>Share what happened, when and where. Include documents or source links where available, and tell us how we can safely follow up.</p></div>
+      <div><h3>Corrections</h3><p>Name the story and the specific fact you believe is wrong. Our <a href="{% if corrections_page %}{{ corrections_page.get_absolute_url }}{% else %}{% url 'contact' %}{% endif %}">corrections policy</a> explains our review process.</p></div>
+      <div><h3>Advertising</h3><p>Include your organisation, campaign dates and intended placement. See <a href="{% if advertising_page %}{{ advertising_page.get_absolute_url }}{% else %}{% url 'contact' %}{% endif %}">advertising information</a>.</p></div>
+      <div><h3>Privacy and data</h3><p>Use “Privacy or data request” and describe the record or request. We may ask for enough information to verify your identity.</p></div>
+      <p class="contact-note">Please do not send passwords, payment details or information you are not authorised to share.</p>
+    </aside>
+  </div>
+</div>
+{% endblock %}

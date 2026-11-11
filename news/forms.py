@@ -5,6 +5,14 @@ class SubscribeForm(forms.Form):
     consent = forms.BooleanField(label='I agree to receive Cedarmond TV emails. I can unsubscribe anytime.')
     website = forms.CharField(required=False,widget=forms.HiddenInput)
 class ContactForm(forms.ModelForm):
+    SUBJECT_CHOICES = [
+        ('Story tip', 'Story tip'),
+        ('Correction', 'Correction'),
+        ('Advertising enquiry', 'Advertising enquiry'),
+        ('Privacy/data request', 'Privacy or data request'),
+        ('General enquiry', 'General enquiry'),
+    ]
+    subject = forms.ChoiceField(choices=SUBJECT_CHOICES, widget=forms.Select())
     website = forms.CharField(required=False,widget=forms.HiddenInput)
     class Meta:
         model = ReaderMessage
