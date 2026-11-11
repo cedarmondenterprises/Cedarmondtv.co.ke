@@ -54,6 +54,7 @@ jobs:
           docker compose config --quiet
           docker compose -p cedarmondtv-preview -f compose.yaml -f compose.preview.yaml config --quiet
           bash -n scripts/preview.sh
+          bash -n scripts/public_preview.sh
       - name: Smoke-test production container against PostgreSQL and Valkey
         env:
           SECRET_KEY: ci-only-smoke-test-secret-not-for-use-in-production-0123456789abcdef
