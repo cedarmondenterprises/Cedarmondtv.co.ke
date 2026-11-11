@@ -7,7 +7,7 @@ from django.db.models import Sum
 from django.urls import path
 from django.utils import timezone
 from simple_history.admin import SimpleHistoryAdmin
-from .models import Article, ArticleDailyView, Category, Author, Tag, Subscription, ReaderMessage, AdPlacement, BreakingNewsTicker, Page, Campaign, MediaAsset, DraftRecovery, StoryComment
+from .models import Article, ArticleDailyView, Category, Author, Tag, Subscription, ReaderMessage, AdPlacement, BreakingNewsTicker, LiveBlog, LiveBlogUpdate, Page, Campaign, MediaAsset, DraftRecovery, StoryComment
 from .newsletter import queue_campaign
 admin.site.site_header = 'Cedarmond TV · Newsroom'
 admin.site.site_title = 'Cedarmond TV Newsroom'
@@ -132,6 +132,38 @@ class ArticleAdmin(ReadOnlyHistoryAdmin):
 class NamedAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug':('name',)}
     search_fields = ['name']
+
+class LiveBlogUpdateInline(admin.StackedInline):
+    model = LiveBlogUpdate
+    extra = 1
+    fields = ['content','published','pinned','created_by','created_at']
+    readonly_fields = ['created_by','created_at']
+    ordering = ['-created_at']
+    show_change_link = False
+
+@admin.register(LiveBlog)
+class LiveBlogAdmin(admin.ModelAdmin):
+    list_display=['title','category','author','status','published_at','updated_at']
+    list_filter=['status','category']
+    search_fields=['title','summary','author__name']
+    prepopulated_fields={'slug':('title',)}
+    date_hierarchy='published_at'
+    readonly_fields=['published_at','started_at','closed_at','updated_at']
+    inlines=[LiveBlogUpdateInline]
+    fieldsets=[('Coverage',{'fields':['title','slug','summary','category','author','cover_asset']}),('Publication',{'fields':['status','published_at','started_at','closed_at','updated_at'],'description':'Set status to Live to publish the coverage page and start the reader update feed. Set Closed when coverage ends.'})]
+
+    def get_queryset(self,request):
+        return super().get_queryset(request).select_related('category','author')
+
+    def save_formset(self,request,form,formset,change):
+        instances=formset.save(commit=False)
+        for instance in instances:
+            if not instance.created_by_id:
+                instance.created_by=request.user
+            instance.save()
+        for instance in formset.deleted_objects:
+            instance.delete()
+        formset.save_m2m()
 
 @admin.register(Page)
 class PageAdmin(ReadOnlyHistoryAdmin):

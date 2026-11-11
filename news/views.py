@@ -20,7 +20,7 @@ from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 from django.utils.html import strip_tags
 from django.utils.text import Truncator
-from .models import Article, ArticleDailyView, ArticleURL, Category, Author, Tag, Subscription, Page, StoryComment
+from .models import Article, ArticleDailyView, ArticleURL, Category, Author, LiveBlog, LiveBlogUpdate, Tag, Subscription, Page, StoryComment
 from .analytics import record_article_view
 from .forms import SubscribeForm, ContactForm, StoryCommentForm
 
@@ -150,6 +150,76 @@ def article(request,slug):
         return redirect(target.get_absolute_url(),permanent=True)
     record_article_view(request, item)
     return render_article(request,item)
+
+
+def live_blog_list(request):
+    now=timezone.now()
+    coverage=LiveBlog.objects.filter(status__in=[LiveBlog.STATUS_LIVE,LiveBlog.STATUS_CLOSED],published_at__lte=now).select_related('category','author','cover_asset')
+    return render(request,'news/live_blog_list.html',{
+        'live_blogs':coverage,
+        'active_count':coverage.filter(status=LiveBlog.STATUS_LIVE).count(),
+        'seo_title':'Live coverage | Cedarmond TV',
+        'seo_description':'Follow live updates and continuing coverage from the Cedarmond TV newsroom.',
+    })
+
+
+def live_blog(request,slug):
+    now=timezone.now()
+    item=get_object_or_404(LiveBlog.objects.select_related('category','author','cover_asset').filter(status__in=[LiveBlog.STATUS_LIVE,LiveBlog.STATUS_CLOSED],published_at__lte=now),slug=slug)
+    updates=list(item.updates.filter(published=True).select_related('created_by')[:60])
+    canonical=settings.SITE_URL+item.get_absolute_url()
+    update_schema=[{
+        '@type':'BlogPosting',
+        'headline':item.title,
+        'articleBody':Truncator(strip_tags(update.content)).chars(500),
+        'datePublished':update.created_at.isoformat(),
+        'author':{'@type':'Person','name':update.created_by.get_full_name() or update.created_by.username} if update.created_by else {'@type':'Organization','name':'Cedarmond TV newsroom'},
+    } for update in reversed(updates)]
+    schema={
+        '@context':'https://schema.org',
+        '@type':'LiveBlogPosting',
+        'headline':item.title,
+        'description':item.summary,
+        'url':canonical,
+        'datePublished':item.published_at.isoformat(),
+        'dateModified':item.updated_at.isoformat(),
+        'coverageStartTime':(item.started_at or item.published_at).isoformat(),
+        'coverageEndTime':item.closed_at.isoformat() if item.closed_at else None,
+        'author':{'@type':'Person','name':item.author.name},
+        'articleSection':item.category.name,
+        'liveBlogUpdate':update_schema,
+    }
+    if item.display_image:
+        schema['image']=absolute_image_url(item.display_image)
+    return render(request,'news/live_blog_detail.html',{
+        'live_blog':item,
+        'live_updates':updates,
+        'last_update_id':max((update.pk for update in updates),default=0),
+        'canonical':canonical,
+        'seo_title':branded_title(item.title),
+        'seo_description':Truncator(item.summary).chars(160),
+        'seo_image':absolute_image_url(item.display_image) if item.display_image else settings.SITE_URL+settings.STATIC_URL+'cedarmond-mark.svg',
+        'seo_image_alt':item.display_alt or 'Cedarmond TV' if item.display_image else 'Cedarmond TV',
+        'og_type':'article',
+        'live_blog_schema_json':json_ld(schema),
+    })
+
+
+@require_http_methods(['GET'])
+def live_blog_updates(request,slug):
+    blog=get_object_or_404(LiveBlog.objects.filter(status__in=[LiveBlog.STATUS_LIVE,LiveBlog.STATUS_CLOSED],published_at__lte=timezone.now()),slug=slug)
+    try: after=max(0,int(request.GET.get('after','0')))
+    except (TypeError,ValueError): after=0
+    updates=blog.updates.filter(published=True,pk__gt=after).select_related('created_by').order_by('pk')[:30]
+    payload=[{
+        'id':update.pk,
+        'content':update.rendered_content,
+        'published_at':timezone.localtime(update.created_at).isoformat(),
+        'display_time':timezone.localtime(update.created_at).strftime('%H:%M EAT'),
+        'author':(update.created_by.get_full_name() or update.created_by.username) if update.created_by else 'Cedarmond TV newsroom',
+        'pinned':update.pinned,
+    } for update in updates]
+    return JsonResponse({'updates':payload,'status':blog.status})
 
 def render_article(request,item,preview=False,comment_form=None,status=200):
     url = settings.SITE_URL + item.get_absolute_url()

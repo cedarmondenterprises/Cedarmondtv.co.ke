@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="live-page">
+  <header class="live-page-heading"><p class="eyebrow">CEDARMOND TV · NEWSROOM</p><h1>Live coverage</h1><p>Follow developing stories with updates from our newsroom.</p></header>
+  {% if live_blogs %}<div class="live-grid">
+    {% for item in live_blogs %}<article class="live-card">
+      {% if item.display_image %}<a class="live-card-image" href="{{ item.get_absolute_url }}"><img src="{{ item.display_image.url }}" alt="{{ item.display_alt }}" loading="lazy"></a>{% endif %}
+      <div class="live-card-copy"><p class="live-state"><span class="live-state-dot {% if item.status == 'closed' %}is-closed{% endif %}"></span>{% if item.status == 'live' %}LIVE{% else %}COVERAGE ENDED{% endif %}</p><p class="eyebrow">{{ item.category.name }}</p><h2><a href="{{ item.get_absolute_url }}">{{ item.title }}</a></h2><p>{{ item.summary }}</p><div class="live-byline">By {{ item.author.name }} · {{ item.published_at|date:'j M Y, H:i' }} EAT</div></div>
+    </article>{% endfor %}
+  </div>{% else %}<div class="live-empty"><span class="live-empty-mark" aria-hidden="true">●</span><h2>No live coverage right now</h2><p>Our newsroom has not opened a live report. Check the latest stories for current reporting.</p><a class="button" href="{% url 'latest' %}">Read the latest stories →</a></div>{% endif %}
+</section>
+{% endblock %}

@@ -5,7 +5,7 @@ from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from news import views
-from news.feeds import ArticleSitemap, AuthorSitemap, CategorySitemap, LatestFeed, PageSitemap, StaticSitemap, TagSitemap
+from news.feeds import ArticleSitemap, AuthorSitemap, CategorySitemap, LatestFeed, LiveBlogSitemap, PageSitemap, StaticSitemap, TagSitemap
 
 urlpatterns = [
     path('newsroom/preview/<int:pk>/', views.preview, name='preview'),
@@ -16,6 +16,9 @@ urlpatterns = [
     path('api/v1/', include('news.api_urls')),
     path('', views.home, name='home'),
     path('latest/', views.listing, name='latest'),
+    path('live/<slug:slug>/updates/', views.live_blog_updates, name='live_blog_updates'),
+    path('live/<slug:slug>/', views.live_blog, name='live_blog'),
+    path('live/', views.live_blog_list, name='live_blogs'),
     path('search/', views.listing, name='search'),
     path('category/<slug:slug>/', views.listing, {'kind': 'category'}, name='category'),
     path('author/<slug:slug>/', views.listing, {'kind': 'author'}, name='author'),
@@ -31,6 +34,7 @@ urlpatterns = [
     path('sitemap.xml', sitemap, {'sitemaps': {
         'static': StaticSitemap,
         'articles': ArticleSitemap,
+        'live-coverage': LiveBlogSitemap,
         'categories': CategorySitemap,
         'authors': AuthorSitemap,
         'topics': TagSitemap,

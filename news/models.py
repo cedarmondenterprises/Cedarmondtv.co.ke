@@ -103,6 +103,81 @@ class Article(models.Model):
         if self.image and not self.image_alt:
             raise ValidationError({'image_alt':'Describe the image for readers using assistive technology.'})
 
+
+class LiveBlog(models.Model):
+    STATUS_DRAFT = 'draft'
+    STATUS_LIVE = 'live'
+    STATUS_CLOSED = 'closed'
+    STATUS_CHOICES = [(STATUS_DRAFT,'Draft'),(STATUS_LIVE,'Live'),(STATUS_CLOSED,'Closed')]
+
+    title = models.CharField(max_length=220)
+    slug = models.SlugField(max_length=240,unique=True)
+    summary = models.TextField(max_length=400)
+    category = models.ForeignKey(Category,on_delete=models.PROTECT,related_name='live_blogs')
+    author = models.ForeignKey(Author,on_delete=models.PROTECT,related_name='live_blogs')
+    cover_asset = models.ForeignKey('MediaAsset',on_delete=models.SET_NULL,null=True,blank=True,related_name='live_blogs')
+    status = models.CharField(max_length=10,choices=STATUS_CHOICES,default=STATUS_DRAFT,db_index=True)
+    published_at = models.DateTimeField(null=True,blank=True,db_index=True)
+    started_at = models.DateTimeField(null=True,blank=True)
+    closed_at = models.DateTimeField(null=True,blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-published_at','-pk']
+        indexes = [models.Index(fields=['status','published_at'])]
+        verbose_name = 'live coverage'
+        verbose_name_plural = 'live coverage'
+
+    def __str__(self): return self.title
+    def get_absolute_url(self): return reverse('live_blog',args=[self.slug])
+    @property
+    def display_image(self): return self.cover_asset.image if self.cover_asset_id else None
+    @property
+    def display_alt(self): return self.cover_asset.alt_text if self.cover_asset_id else ''
+    @property
+    def is_open(self): return self.status == self.STATUS_LIVE
+
+    def clean(self):
+        super().clean()
+        if self.closed_at and self.started_at and self.closed_at < self.started_at:
+            raise ValidationError({'closed_at':'The close time cannot be earlier than the start time.'})
+
+    def save(self,*args,**kwargs):
+        if self.status in {self.STATUS_LIVE,self.STATUS_CLOSED} and not self.published_at:
+            self.published_at=timezone.now()
+        if self.status == self.STATUS_LIVE:
+            if not self.started_at: self.started_at=timezone.now()
+            self.closed_at=None
+        elif self.status == self.STATUS_CLOSED and not self.closed_at:
+            self.closed_at=timezone.now()
+        super().save(*args,**kwargs)
+
+
+class LiveBlogUpdate(models.Model):
+    live_blog = models.ForeignKey(LiveBlog,on_delete=models.CASCADE,related_name='updates')
+    content = ProseEditorField(extensions=EXTENSIONS,sanitize=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL,null=True,blank=True,related_name='live_blog_updates')
+    published = models.BooleanField(default=False)
+    pinned = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True,db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-pinned','-created_at','-pk']
+        indexes = [models.Index(fields=['live_blog','published','created_at'])]
+        verbose_name = 'live coverage update'
+        verbose_name_plural = 'live coverage updates'
+
+    def __str__(self): return f'{self.live_blog}: {self.created_at:%Y-%m-%d %H:%M}'
+
+    @property
+    def rendered_content(self): return sanitize_html(self.content)
+
+    def save(self,*args,**kwargs):
+        self.content=sanitize_html(self.content)
+        super().save(*args,**kwargs)
+
+
 class Subscription(models.Model):
     email = models.EmailField(unique=True)
     active = models.BooleanField(default=False)

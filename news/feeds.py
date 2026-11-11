@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.utils import timezone
 from urllib.parse import urlsplit
 
-from .models import Article, Author, Category, Page, Tag
+from .models import Article, Author, Category, LiveBlog, Page, Tag
 
 
 class LatestFeed(Feed):
@@ -57,6 +57,17 @@ class ArticleSitemap(CanonicalSitemap):
 
     def items(self):
         return Article.objects.live()
+
+    def lastmod(self, item):
+        return item.updated_at
+
+
+class LiveBlogSitemap(CanonicalSitemap):
+    changefreq = 'hourly'
+    priority = 0.7
+
+    def items(self):
+        return LiveBlog.objects.filter(status__in=[LiveBlog.STATUS_LIVE, LiveBlog.STATUS_CLOSED], published_at__lte=timezone.now())
 
     def lastmod(self, item):
         return item.updated_at
