@@ -267,8 +267,8 @@ def contact(request):
         if getattr(request,'limited',False) or form.cleaned_data['website'] or throttled(request,'contact_time'): form.add_error(None,'Please wait a minute before trying again.')
         else:
             form.save(); messages.success(request,'Your message has reached our editorial inbox.'); return redirect('contact')
-    title = 'Talk to the newsroom'
-    description = 'Send Cedarmond TV a story tip, correction, advertising enquiry or feedback.'
+    title = 'Contact'
+    description = 'Contact Cedarmond TV with a story tip, correction, advertising enquiry, privacy request or feedback.'
     return render(request,'news/contact.html',{'form':form,'title':title,'description':description,'seo_title':f'{title} | Cedarmond TV','seo_description':description,'button':'Send message'})
 
 def page(request,slug):
