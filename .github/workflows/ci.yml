@@ -53,6 +53,7 @@ jobs:
           cp .env.example .env
           docker compose config --quiet
           docker compose -p cedarmondtv-preview -f compose.yaml -f compose.preview.yaml config --quiet
+          docker compose -p cedarmondtv-public -f compose.yaml -f compose.public.yaml config --quiet
           bash -n scripts/preview.sh
           bash -n scripts/public_preview.sh
       - name: Smoke-test production container against PostgreSQL and Valkey
