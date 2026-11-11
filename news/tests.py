@@ -124,6 +124,10 @@ class NewsroomTests(TestCase):
         response=self.client.post(f'/story/{self.article.slug}/comments/',{'display_name':'Reader','body':'Draft comment','consent':'on','website':''})
         self.assertEqual(response.status_code,404)
         self.assertFalse(StoryComment.objects.exists())
+    def test_reporters_cannot_access_reader_comment_moderation(self):
+        self.make_reporter();self.client.force_login(User.objects.get(username='reporter'))
+        response=self.client.get('/admin/news/storycomment/')
+        self.assertEqual(response.status_code,403)
     def test_rich_text_retains_formatting_and_removes_active_content(self):
         self.article.title='</script><script>alert(1)</script>'
         self.article.body='<h2>Context</h2><p><strong>Important</strong></p><script>alert(1)</script><a href="javascript:alert(1)">bad</a>'

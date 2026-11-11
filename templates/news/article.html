@@ -18,13 +18,13 @@
     <p class="correction">Something we should correct? <a href="{% url 'contact' %}">Let our editors know.</a></p>
     {% if comment_form %}<section class="reader-comments" id="reader-comments" aria-labelledby="comments-heading">
       <div class="section-heading"><h2 id="comments-heading">Reader discussion</h2><span>{{ comment_count }} approved</span></div>
-      <p class="comment-intro">Share a considered response. Comments are reviewed before publication; do not include private contact details.</p>
+      <p class="comment-intro">Keep comments relevant and respectful. No hate, threats, spam, unverified accusations or private contact details. Every comment is reviewed before publication.</p>
       {% if reader_comments %}<div class="comment-list" aria-live="polite">{% for comment in reader_comments %}<article class="comment-card"><header><strong>{{ comment.display_name }}</strong><time datetime="{{ comment.created_at|date:'c' }}">{{ comment.created_at|date:'j M Y, H:i' }} EAT</time></header><div>{{ comment.body|linebreaksbr }}</div></article>{% endfor %}</div>{% if comment_count > 50 %}<p class="meta">Showing the latest 50 approved comments.</p>{% endif %}{% else %}<p class="comment-empty">No comments have been approved yet.</p>{% endif %}
       <form class="comment-form" method="post" action="{% url 'story_comment' article.slug %}">
         {% csrf_token %}{{ comment_form.website }}{{ comment_form.non_field_errors }}
         <div class="comment-field">{{ comment_form.display_name.errors }}<label for="{{ comment_form.display_name.id_for_label }}">{{ comment_form.display_name.label }}</label>{{ comment_form.display_name }}</div>
         <div class="comment-field">{{ comment_form.body.errors }}<label for="{{ comment_form.body.id_for_label }}">{{ comment_form.body.label }}</label>{{ comment_form.body }}</div>
-        <div class="comment-consent">{{ comment_form.consent.errors }}{{ comment_form.consent }}<label for="{{ comment_form.consent.id_for_label }}">{{ comment_form.consent.label }}</label></div>
+        <div class="comment-consent">{{ comment_form.consent.errors }}{{ comment_form.consent }}<label for="{{ comment_form.consent.id_for_label }}">I confirm that my comment follows these standards and understand it is reviewed before publication.</label></div>
         <button class="button" type="submit">Submit for review →</button>
       </form>
     </section>{% endif %}
