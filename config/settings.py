@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from pathlib import Path
 from django.core.exceptions import ImproperlyConfigured
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -63,7 +64,7 @@ else:
 RATELIMIT_ENABLE = bool(REDIS_URL)
 TRUST_PROXY_HEADERS = os.getenv('TRUST_PROXY_HEADERS','0') == '1'
 SIMPLE_HISTORY_REVERT_DISABLED = True
-POST_OFFICE = {'BACKENDS':{'default':EMAIL_BACKEND},'DEFAULT_PRIORITY':'medium','MAX_RETRIES':3,'RETRY_INTERVAL':300,'BATCH_SIZE':100,'THREADS_PER_PROCESS':1}
+POST_OFFICE = {'BACKENDS':{'default':EMAIL_BACKEND},'DEFAULT_PRIORITY':'medium','MAX_RETRIES':3,'RETRY_INTERVAL':timedelta(minutes=5),'BATCH_SIZE':100,'THREADS_PER_PROCESS':1}
 POST_OFFICE_CACHE = False
 if not DEBUG:
     if len(SECRET_KEY) < 50 or SECRET_KEY.startswith('replace-'):

@@ -2,6 +2,7 @@ from datetime import timedelta
 from io import BytesIO
 import tempfile
 from unittest import skipUnless
+from unittest.mock import patch
 from django.conf import settings
 from django.test import TestCase, Client, override_settings
 from django.utils import timezone
@@ -14,6 +15,8 @@ from PIL import Image
 from post_office.models import Email, STATUS
 from .models import Article, Author, Category, Subscription, ReaderMessage, Page, Campaign, CampaignDelivery
 from .newsletter import subscription_token, queue_campaign
+
+PRODUCTION_MAIL_CONFIG = settings.POST_OFFICE
 
 TEST_STORAGE={'default':{'BACKEND':'django.core.files.storage.FileSystemStorage'},'staticfiles':{'BACKEND':'django.contrib.staticfiles.storage.StaticFilesStorage'}}
 
@@ -130,6 +133,18 @@ class NewsroomTests(TestCase):
         email=Email.objects.get(); self.assertIn('/newsletter/unsubscribe/',email.message)
         email.dispatch(); self.assertEqual(len(mail.outbox),1)
         self.assertEqual(mail.outbox[0].to,[active.email])
+    def test_failed_delivery_is_scheduled_for_retry(self):
+        from post_office.mail import send_queued
+        config={**PRODUCTION_MAIL_CONFIG,'BACKENDS':{'default':'django.core.mail.backends.locmem.EmailBackend'}}
+        sub=Subscription.objects.create(email='retry@example.com',active=True)
+        campaign=Campaign.objects.create(subject='Retry',body='Retry test.')
+        queue_campaign(campaign.pk)
+        with override_settings(POST_OFFICE=config),patch('post_office.models.Email.dispatch',side_effect=ConnectionError('Simulated temporary SMTP failure')):
+            result=send_queued(processes=1)
+        email=Email.objects.get()
+        self.assertEqual(email.status,STATUS.requeued)
+        self.assertGreater(email.scheduled_time,timezone.now())
+
     def test_unsubscribe_cancels_waiting_campaign_mail(self):
         sub=Subscription.objects.create(email='confirmed@example.com',active=True)
         campaign=Campaign.objects.create(subject='News',body='News.')
