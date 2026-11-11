@@ -31,6 +31,42 @@ class NewsroomTests(TestCase):
         Page.objects.create(title='About',slug='about',body='<p>Our newsroom.</p>',published=True)
         for url in ['/',self.article.get_absolute_url(),'/category/kenya/','/author/news-desk/','/latest/','/search/?q=verified','/pages/about/','/contact/','/newsletter/','/feed.xml','/sitemap.xml','/robots.txt','/healthz/']:
             self.assertEqual(self.client.get(url).status_code,200,url)
+    def test_public_api_only_exposes_live_stories_and_safe_fields(self):
+        response=self.client.get('/api/v1/articles/')
+        self.assertEqual(response.status_code,200)
+        self.assertEqual(response.json()['count'],1)
+        item=response.json()['results'][0]
+        self.assertEqual(item['slug'],'verified')
+        self.assertEqual(item['category'],{'name':'Kenya','slug':'kenya'})
+        for private_field in ['owner','assignment_notes','deadline','status','editorial_comments','reader_comments']:
+            self.assertNotIn(private_field,item)
+        self.article.status='draft';self.article.save()
+        self.assertEqual(self.client.get('/api/v1/articles/').json()['count'],0)
+        self.assertEqual(self.client.get('/api/v1/articles/verified/').status_code,404)
+    def test_public_api_filters_and_paginates(self):
+        tag=Tag.objects.create(name='Accountability',slug='accountability');self.article.tags.add(tag)
+        for slug in ['second-report','third-report']:
+            Article.objects.create(title=f'Report {slug}',slug=slug,summary='New reporting',body='<p>Verified context.</p>',category=self.category,author=self.author,status='published')
+        self.assertEqual(self.client.get('/api/v1/articles/?category=kenya&page_size=1').json()['count'],3)
+        self.assertEqual(len(self.client.get('/api/v1/articles/?tag=accountability').json()['results']),1)
+        self.assertEqual(self.client.get('/api/v1/articles/?author=news-desk').json()['count'],3)
+        self.assertEqual(self.client.get('/api/v1/articles/?q=Accountability').json()['count'],1)
+        self.assertEqual(self.client.get('/api/v1/articles/?page_size=51').status_code,200)
+        self.assertEqual(self.client.get('/api/v1/articles/?q='+('x'*121)).status_code,400)
+    def test_public_api_metadata_and_self_hosted_documentation(self):
+        tag=Tag.objects.create(name='Accountability',slug='accountability');self.article.tags.add(tag)
+        for url in ['/api/v1/categories/','/api/v1/authors/','/api/v1/tags/']:
+            self.assertEqual(self.client.get(url).status_code,200,url)
+        category_results=self.client.get('/api/v1/categories/').json()['results']
+        self.assertEqual(category_results[0]['article_count'],1,category_results)
+        self.assertEqual(self.client.get('/api/v1/authors/').json()['results'][0]['article_count'],1)
+        self.assertEqual(self.client.get('/api/v1/tags/').json()['results'][0]['article_count'],1)
+        schema=self.client.get('/api/schema/?format=json')
+        self.assertEqual(schema.status_code,200)
+        self.assertIn('/api/v1/articles/',schema.json()['paths'])
+        self.assertEqual(self.client.get('/api/docs/').status_code,200)
+        self.assertEqual(self.client.get('/api/redoc/').status_code,200)
+        self.assertEqual(self.client.post('/api/v1/articles/').status_code,405)
     def test_old_story_addresses_permanently_redirect_to_current_slug(self):
         self.article.slug='new-address';self.article.save()
         response=self.client.get('/story/verified/')

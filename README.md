@@ -11,6 +11,7 @@ A working, self-hosted Kenyan news publishing application for **cedarmondtv.co.k
 - **Valkey + django-redis + django-ratelimit**: cross-worker IP limits for public forms.
 - **Pillow**: WebP photographs, small card thumbnails, metadata removal.
 - **django-axes, WhiteNoise, Gunicorn and Caddy**: authentication lockout, compressed static assets, application serving and HTTPS.
+- **Django REST Framework + drf-spectacular**: versioned, read-only JSON API for published stories, sections, authors and topics; self-hosted OpenAPI/Swagger/ReDoc docs. No paid API keys or external documentation CDN are required.
 
 See [OPEN_SOURCE.md](docs/OPEN_SOURCE.md) for upstream projects and licenses. Python versions are pinned in `requirements.txt`.
 
@@ -42,6 +43,22 @@ See [OPEN_SOURCE.md](docs/OPEN_SOURCE.md) for upstream projects and licenses. Py
 New installations start with **no articles**. The empty state is honest. The newsroom must publish real reporting and approved informational pages before public launch. Newsletter calls to action are absent until `NEWSLETTER_ENABLED=1`; without configuration the app does not claim that email delivery is available.
 
 The newsroom also includes CMS-style editorial cards, a monthly assignment/deadline desk, private review discussions, browser draft recovery, stale-edit detection, reusable rights-attributed media, and permanent redirects for changed story URLs. Readers can comment on published articles; comments are rate limited, held for editor approval, and rendered as escaped text. Search covers story text, authors, sections and topics. The public homepage and archives use responsive red-and-white story cards. These workflows use the existing Django admin, database and open-source packages; there is no separate SaaS dependency.
+
+## Public API
+
+The read-only API exposes original Cedarmond TV content after publication. It does not import or republish content from other publishers. Drafts, future stories, internal assignment notes, reporter ownership, and unapproved reader comments are excluded. Anonymous traffic is throttled to 600 requests per hour per client IP; pagination defaults to 20 and is capped at 50.
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/v1/articles/` | Published stories; supports `q`, `category`, `author`, `tag`, `page`, and `page_size` |
+| `GET /api/v1/articles/{slug}/` | One published story, including sanitized article HTML |
+| `GET /api/v1/categories/` | Section metadata and live article counts |
+| `GET /api/v1/authors/` | Authors with published work |
+| `GET /api/v1/tags/` | Topics used by published stories |
+| `/api/schema/` | OpenAPI 3 schema in JSON/YAML |
+| `/api/docs/` and `/api/redoc/` | Self-hosted Swagger UI and ReDoc documentation |
+
+Example: `curl 'https://cedarmondtv.co.ke/api/v1/articles/?category=politics&page_size=10'`. See [API.md](docs/API.md) for response fields and integration notes. The packages are open source; public API access does not require a third-party API key or paid service.
 
 ## Local development
 

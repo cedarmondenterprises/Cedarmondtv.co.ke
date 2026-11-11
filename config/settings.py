@@ -10,7 +10,7 @@ if not SECRET_KEY:
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000').rstrip('/')
 CSRF_TRUSTED_ORIGINS = [SITE_URL]
-INSTALLED_APPS = ['django.contrib.admin','django.contrib.auth','django.contrib.contenttypes','django.contrib.sessions','django.contrib.messages','django.contrib.staticfiles','django.contrib.sitemaps','axes','django_prose_editor','simple_history','post_office','news']
+INSTALLED_APPS = ['django.contrib.admin','django.contrib.auth','django.contrib.contenttypes','django.contrib.sessions','django.contrib.messages','django.contrib.staticfiles','django.contrib.sitemaps','rest_framework','drf_spectacular','drf_spectacular_sidecar','axes','django_prose_editor','simple_history','post_office','news']
 MIDDLEWARE = ['django.middleware.security.SecurityMiddleware','whitenoise.middleware.WhiteNoiseMiddleware','django.contrib.sessions.middleware.SessionMiddleware','django.middleware.common.CommonMiddleware','django.middleware.csrf.CsrfViewMiddleware','django.contrib.auth.middleware.AuthenticationMiddleware','django.contrib.messages.middleware.MessageMiddleware','django.middleware.clickjacking.XFrameOptionsMiddleware','axes.middleware.AxesMiddleware','simple_history.middleware.HistoryRequestMiddleware']
 ROOT_URLCONF = 'config.urls'
 LOGIN_URL = '/admin/login/'
@@ -66,6 +66,24 @@ TRUST_PROXY_HEADERS = os.getenv('TRUST_PROXY_HEADERS','0') == '1'
 SIMPLE_HISTORY_REVERT_DISABLED = True
 POST_OFFICE = {'BACKENDS':{'default':EMAIL_BACKEND},'DEFAULT_PRIORITY':'medium','MAX_RETRIES':3,'RETRY_INTERVAL':timedelta(minutes=5),'BATCH_SIZE':100,'THREADS_PER_PROCESS':1}
 POST_OFFICE_CACHE = False
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.AllowAny'],
+    'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer'],
+    'DEFAULT_PAGINATION_CLASS': 'news.api_support.PublicPagination',
+    'PAGE_SIZE': 20,
+    'DEFAULT_THROTTLE_CLASSES': ['news.api_support.PublicAPIThrottle'],
+    'DEFAULT_THROTTLE_RATES': {'public_api': '600/hour'},
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Cedarmond TV Public API',
+    'DESCRIPTION': 'Read-only access to Cedarmond TV published articles and newsroom metadata.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SWAGGER_UI_DIST': 'SIDECAR',
+    'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
+    'REDOC_DIST': 'SIDECAR',
+}
 if not DEBUG:
     if len(SECRET_KEY) < 50 or SECRET_KEY.startswith('replace-'):
         raise ImproperlyConfigured('Production SECRET_KEY must contain at least 50 random characters.')
