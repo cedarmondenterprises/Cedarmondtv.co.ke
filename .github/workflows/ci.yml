@@ -1,18 +1,65 @@
 name: Verify newsroom
 on: [push, pull_request]
+permissions:
+  contents: read
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: cedarmond
+          POSTGRES_PASSWORD: ci-database-password
+          POSTGRES_DB: cedarmond
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U cedarmond -d cedarmond"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: valkey/valkey:8-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "valkey-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 10
     env:
       DEBUG: '1'
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_USER: cedarmond
+      POSTGRES_PASSWORD: ci-database-password
+      POSTGRES_DB: cedarmond
+      REDIS_URL: redis://127.0.0.1:6379/0
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: pip
       - run: pip install -r requirements.txt
+      - run: pip check
       - run: python manage.py makemigrations --check --dry-run
       - run: python manage.py test
       - run: python manage.py collectstatic --noinput
       - run: python manage.py check
       - run: docker build -t cedarmondtv:test .
+      - name: Verify production configuration
+        env:
+          DEBUG: '0'
+          SECRET_KEY: ci-only-configuration-check-not-a-live-secret-0123456789abcdef
+          SITE_URL: https://cedarmondtv.co.ke
+        run: python manage.py check --deploy
+      - name: Verify Compose configuration
+        run: cp .env.example .env && docker compose config --quiet
+      - name: Smoke-test production container against PostgreSQL and Valkey
+        env:
+          SECRET_KEY: ci-only-smoke-test-secret-not-for-use-in-production-0123456789abcdef
+          SITE_URL: https://cedarmondtv.co.ke
+          ALLOWED_HOSTS: localhost,127.0.0.1
+        run: |
+          set -euo pipefail
+          container_env=(-e DEBUG=0 -e SECRET_KEY -e SITE_URL -e ALLOWED_HOSTS -e POSTGRES_HOST -e POSTGRES_USER -e POSTGRES_PASSWORD -e POSTGRES_DB -e REDIS_URL)
+          docker run --rm --network host "${container_env[@]}" cedarmondtv:test python manage.py migrate --noinput
+          docker run -d --name newsroom-smoke --network host "${container_env[@]}" cedarmondtv:test
+          trap 'docker logs newsroom-smoke; docker rm -f newsroom-smoke' EXIT
+          curl --fail --retry 10 --retry-connrefused --retry-delay 2 -H 'X-Forwarded-Proto: https' http://127.0.0.1:8000/healthz/
+          curl --fail -H 'X-Forwarded-Proto: https' http://127.0.0.1:8000/ | grep 'No stories have been published yet.'

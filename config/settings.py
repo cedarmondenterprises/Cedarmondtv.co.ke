@@ -9,9 +9,10 @@ if not SECRET_KEY:
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000').rstrip('/')
 CSRF_TRUSTED_ORIGINS = [SITE_URL]
-INSTALLED_APPS = ['django.contrib.admin','django.contrib.auth','django.contrib.contenttypes','django.contrib.sessions','django.contrib.messages','django.contrib.staticfiles','django.contrib.sitemaps','axes','news']
-MIDDLEWARE = ['django.middleware.security.SecurityMiddleware','whitenoise.middleware.WhiteNoiseMiddleware','django.contrib.sessions.middleware.SessionMiddleware','django.middleware.common.CommonMiddleware','django.middleware.csrf.CsrfViewMiddleware','django.contrib.auth.middleware.AuthenticationMiddleware','django.contrib.messages.middleware.MessageMiddleware','django.middleware.clickjacking.XFrameOptionsMiddleware','axes.middleware.AxesMiddleware']
+INSTALLED_APPS = ['django.contrib.admin','django.contrib.auth','django.contrib.contenttypes','django.contrib.sessions','django.contrib.messages','django.contrib.staticfiles','django.contrib.sitemaps','axes','django_prose_editor','simple_history','post_office','news']
+MIDDLEWARE = ['django.middleware.security.SecurityMiddleware','whitenoise.middleware.WhiteNoiseMiddleware','django.contrib.sessions.middleware.SessionMiddleware','django.middleware.common.CommonMiddleware','django.middleware.csrf.CsrfViewMiddleware','django.contrib.auth.middleware.AuthenticationMiddleware','django.contrib.messages.middleware.MessageMiddleware','django.middleware.clickjacking.XFrameOptionsMiddleware','axes.middleware.AxesMiddleware','simple_history.middleware.HistoryRequestMiddleware']
 ROOT_URLCONF = 'config.urls'
+LOGIN_URL = '/admin/login/'
 TEMPLATES = [{'BACKEND':'django.template.backends.django.DjangoTemplates','DIRS':[BASE_DIR/'templates'],'APP_DIRS':True,'OPTIONS':{'context_processors':['django.template.context_processors.request','django.contrib.auth.context_processors.auth','django.contrib.messages.context_processors.messages','news.context.site']}}]
 WSGI_APPLICATION = 'config.wsgi.application'
 if os.getenv('POSTGRES_HOST'):
@@ -45,7 +46,29 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND','django.core.mail.backends.console.EmailBackend')
 EMAIL_HOST = os.getenv('EMAIL_HOST','')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT','587'))
-EMAIL_USE_TLS = True
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS','1') == '1'
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL','0') == '1'
+EMAIL_TIMEOUT = 20
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER','')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD','')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL','Cedarmond TV <news@cedarmondtv.co.ke>')
+
+# Optional services are never presented as working until configured.
+NEWSLETTER_ENABLED = os.getenv('NEWSLETTER_ENABLED','0') == '1'
+REDIS_URL = os.getenv('REDIS_URL','')
+if REDIS_URL:
+    CACHES = {'default': {'BACKEND':'django_redis.cache.RedisCache','LOCATION':REDIS_URL,'OPTIONS':{'CLIENT_CLASS':'django_redis.client.DefaultClient','SOCKET_CONNECT_TIMEOUT':3,'SOCKET_TIMEOUT':3}}}
+else:
+    CACHES = {'default': {'BACKEND':'django.core.cache.backends.locmem.LocMemCache'}}
+RATELIMIT_ENABLE = bool(REDIS_URL)
+TRUST_PROXY_HEADERS = os.getenv('TRUST_PROXY_HEADERS','0') == '1'
+SIMPLE_HISTORY_REVERT_DISABLED = True
+POST_OFFICE = {'BACKENDS':{'default':EMAIL_BACKEND},'DEFAULT_PRIORITY':'medium','MAX_RETRIES':3,'RETRY_INTERVAL':300,'BATCH_SIZE':100,'THREADS_PER_PROCESS':1}
+POST_OFFICE_CACHE = False
+if not DEBUG:
+    if len(SECRET_KEY) < 50 or SECRET_KEY.startswith('replace-'):
+        raise ImproperlyConfigured('Production SECRET_KEY must contain at least 50 random characters.')
+    if not SITE_URL.startswith('https://'):
+        raise ImproperlyConfigured('Production SITE_URL must use HTTPS.')
+    if NEWSLETTER_ENABLED and (not EMAIL_HOST or EMAIL_BACKEND != 'django.core.mail.backends.smtp.EmailBackend'):
+        raise ImproperlyConfigured('Newsletter requires an SMTP host and SMTP backend.')

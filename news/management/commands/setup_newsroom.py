@@ -9,5 +9,5 @@ class Command(BaseCommand):
         reporter,_ = Group.objects.get_or_create(name='Reporter')
         editor,_ = Group.objects.get_or_create(name='Editor')
         reporter.permissions.set(Permission.objects.filter(content_type__app_label='news',codename__in=['add_article','view_article','change_article','view_category','view_author','view_tag']))
-        editor.permissions.set(Permission.objects.filter(content_type__app_label='news').exclude(content_type__model='subscription'))
+        editor.permissions.set(Permission.objects.filter(content_type__app_label='news').exclude(content_type__model__in=['subscription','campaign','campaigndelivery']))
         self.stdout.write(self.style.SUCCESS('Newsroom roles and sections ready. Grant staff status and assign groups in admin.'))

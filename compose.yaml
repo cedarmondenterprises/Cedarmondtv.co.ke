@@ -4,11 +4,15 @@ services:
     env_file: .env
     environment:
       POSTGRES_HOST: db
+      REDIS_URL: redis://redis:6379/0
+      TRUST_PROXY_HEADERS: "1"
     restart: unless-stopped
     volumes:
       - media:/app/media
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:8000/healthz/',headers={'Host':'localhost','X-Forwarded-Proto':'https'}),timeout=5)"]
@@ -16,6 +20,30 @@ services:
       timeout: 10s
       retries: 3
     networks: [backend, edge]
+  mail:
+    build: .
+    env_file: .env
+    environment:
+      POSTGRES_HOST: db
+      REDIS_URL: redis://redis:6379/0
+    command: ["python", "manage.py", "mail_worker"]
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [backend, edge]
+  redis:
+    image: valkey/valkey:8-alpine
+    command: ["valkey-server", "--maxmemory", "128mb", "--maxmemory-policy", "noeviction"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [backend]
   db:
     image: postgres:17-alpine
     env_file: .env

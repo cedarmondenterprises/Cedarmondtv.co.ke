@@ -1,4 +1,10 @@
 import math
+import uuid
+from django.conf import settings
+from django.utils.html import strip_tags
+from django_prose_editor.fields import ProseEditorField
+from simple_history.models import HistoricalRecords
+from .editor import EXTENSIONS, sanitize_html
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
@@ -37,7 +43,10 @@ class Article(models.Model):
     title = models.CharField(max_length=220)
     slug = models.SlugField(unique=True,max_length=240)
     summary = models.TextField(max_length=400)
-    body = models.TextField(help_text='Plain text. Separate paragraphs with blank lines. HTML is escaped for safety.')
+    body = ProseEditorField(extensions=EXTENSIONS,sanitize=True)
+    history = HistoricalRecords()
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL,null=True,blank=True,related_name='articles')
+    thumbnail = models.ImageField(upload_to='thumbnails/%Y/%m/',blank=True,editable=False)
     category = models.ForeignKey(Category,on_delete=models.PROTECT)
     author = models.ForeignKey(Author,on_delete=models.PROTECT)
     tags = models.ManyToManyField(Tag,blank=True)
@@ -50,7 +59,6 @@ class Article(models.Model):
     featured = models.BooleanField(default=False)
     breaking = models.BooleanField(default=False)
     editors_pick = models.BooleanField(default=False)
-    demo = models.BooleanField(default=False)
     seo_title = models.CharField(max_length=70,blank=True)
     seo_description = models.CharField(max_length=160,blank=True)
     objects = ArticleQuerySet.as_manager()
@@ -61,7 +69,14 @@ class Article(models.Model):
     def __str__(self): return self.title
     def get_absolute_url(self): return reverse('article',args=[self.slug])
     @property
-    def reading_minutes(self): return max(1,math.ceil(len(self.body.split())/220))
+    def reading_minutes(self): return max(1,math.ceil(len(strip_tags(self.body).split())/220))
+    @property
+    def rendered_body(self): return sanitize_html(self.body)
+    def save(self,*args,**kwargs):
+        self.body = sanitize_html(self.body)
+        from .media import optimize_article_image
+        optimize_article_image(self)
+        super().save(*args,**kwargs)
     def clean(self):
         if self.image and not self.image_alt:
             raise ValidationError({'image_alt':'Describe the image for readers using assistive technology.'})
@@ -70,6 +85,8 @@ class Subscription(models.Model):
     email = models.EmailField(unique=True)
     active = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    confirmed_at = models.DateTimeField(null=True,blank=True)
+    token_version = models.UUIDField(default=uuid.uuid4,editable=False)
     def __str__(self): return self.email
 
 class ReaderMessage(models.Model):
@@ -88,3 +105,36 @@ class AdPlacement(models.Model):
     destination = models.URLField()
     active = models.BooleanField(default=True)
     def __str__(self): return self.label
+
+
+class Page(models.Model):
+    title = models.CharField(max_length=180)
+    slug = models.SlugField(unique=True)
+    body = ProseEditorField(extensions=EXTENSIONS,sanitize=True)
+    published = models.BooleanField(default=False)
+    position = models.PositiveIntegerField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+    history = HistoricalRecords()
+    class Meta: ordering = ['position','title']
+    def __str__(self): return self.title
+    def get_absolute_url(self): return reverse('page',args=[self.slug])
+    @property
+    def rendered_body(self): return sanitize_html(self.body)
+    def save(self,*args,**kwargs):
+        self.body=sanitize_html(self.body)
+        super().save(*args,**kwargs)
+
+class Campaign(models.Model):
+    subject = models.CharField(max_length=150)
+    body = models.TextField(help_text='Plain-text newsletter. A personal unsubscribe link is appended automatically.')
+    queued_at = models.DateTimeField(null=True,blank=True,editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta: permissions = [('send_campaign','Can send newsletter campaigns')]
+    def __str__(self): return self.subject
+
+class CampaignDelivery(models.Model):
+    campaign = models.ForeignKey(Campaign,on_delete=models.CASCADE)
+    subscriber = models.ForeignKey(Subscription,on_delete=models.CASCADE)
+    email = models.ForeignKey('post_office.Email',on_delete=models.SET_NULL,null=True,blank=True)
+    class Meta:
+        constraints=[models.UniqueConstraint(fields=['campaign','subscriber'],name='one_campaign_per_subscriber')]
