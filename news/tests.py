@@ -155,6 +155,14 @@ class NewsroomTests(TestCase):
         form=ArticleAdminForm(data={'loaded_version':old,'recovery_key':''},instance=self.article)
         self.assertFalse(form.is_valid())
         self.assertTrue(any('changed after you opened it' in error for error in form.non_field_errors()))
+    def test_article_form_renders_the_loaded_version_token(self):
+        from .admin import ArticleAdminForm
+        form=ArticleAdminForm(instance=self.article)
+        self.assertEqual(form['loaded_version'].value(),self.article.updated_at.isoformat())
+        stale_message='This story changed after you opened it.'
+        posted=ArticleAdminForm(data={'loaded_version':self.article.updated_at.isoformat()},instance=self.article)
+        posted.is_valid()
+        self.assertFalse(any(stale_message in error for error in posted.non_field_errors()))
     def test_draft_and_future_articles_are_not_public(self):
         for status,date in [('draft',timezone.now()),('published',timezone.now()+timedelta(days=1)),('review',timezone.now())]:
             self.article.status=status; self.article.published_at=date; self.article.save()
@@ -282,6 +290,10 @@ class NewsroomTests(TestCase):
         response=self.client.get(f'/admin/news/article/{self.article.pk}/change/')
         self.assertEqual(response.status_code,200)
         self.assertContains(response,'django-prose-editor')
+        form=response.context['adminform'].form
+        self.assertIn('loaded_version',form.fields)
+        self.assertEqual(form['loaded_version'].value(),self.article.updated_at.isoformat())
+        self.assertContains(response,'loaded_version')
     def test_campaign_is_queued_once_and_only_for_confirmed_subscribers(self):
         active=Subscription.objects.create(email='confirmed@example.com',active=True)
         Subscription.objects.create(email='pending@example.com')

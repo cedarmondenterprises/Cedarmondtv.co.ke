@@ -17,6 +17,10 @@ class ArticleAdminForm(forms.ModelForm):
     class Meta:
         model=Article
         fields='__all__'
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
+        if self.instance.pk and not self.is_bound:
+            self.initial['loaded_version']=self.instance.updated_at.isoformat()
     def clean(self):
         cleaned=super().clean()
         if self.instance.pk:
@@ -55,6 +59,12 @@ class ArticleAdmin(ReadOnlyHistoryAdmin):
     list_select_related = ['category','author']
     actions = ['submit_for_review']
     fieldsets = [('Story',{'fields':('title','slug','summary','body')}),('Attribution',{'fields':('author','category','tags','owner')}),('Photography',{'fields':('media_asset','image','image_alt','image_credit')}),('Assignment',{'fields':('deadline','assignment_notes'),'classes':('collapse',)}),('Publishing',{'fields':('status','published_at','featured','breaking','editors_pick','preview_link')}),('Search appearance',{'fields':('seo_title','seo_description','updated_at'),'classes':('collapse',)})]
+    def get_form(self,request,obj=None,change=False,**kwargs):
+        fields=kwargs.get('fields')
+        if fields is None:
+            fields=[field for fieldset in self.get_fieldsets(request,obj) for field in fieldset[1]['fields']]
+        kwargs['fields']=tuple(dict.fromkeys([*fields,'recovery_key','loaded_version']))
+        return super().get_form(request,obj,change,**kwargs)
     def get_urls(self):
         from . import newsroom
         custom=[
