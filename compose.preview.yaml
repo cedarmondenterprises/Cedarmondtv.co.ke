@@ -1,0 +1,12 @@
+# Local-only preview override for an existing Ubuntu host.
+# Start only "db redis web"; do not start the bundled "caddy" or "mail" services.
+# The preview is accessible ONLY on the VM loopback, via an authenticated SSH tunnel.
+services:
+  web:
+    ports:
+      - "127.0.0.1:${CEDARMOND_PREVIEW_PORT:-18080}:8000"
+    environment:
+      DEBUG: "1"
+      SITE_URL: "http://localhost:${CEDARMOND_PREVIEW_PORT:-18080}"
+      ALLOWED_HOSTS: "localhost,127.0.0.1"
+      TRUST_PROXY_HEADERS: "0"
