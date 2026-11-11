@@ -107,6 +107,15 @@ class NewsroomTests(TestCase):
         response=self.client.get('/')
         self.assertContains(response,'class="story-card"')
         self.assertContains(response,'cards.css')
+    def test_homepage_avoids_repeating_the_lead_story(self):
+        self.article.featured=True
+        self.article.editors_pick=True
+        self.article.save()
+        response=self.client.get('/')
+        self.assertEqual(response.context['latest'],[])
+        self.assertEqual(response.context['picks'],[])
+        self.assertContains(response,'front-grid single-lead no-lead-image')
+        self.assertEqual(response.content.decode().count(self.article.title),1)
     def test_editorial_desk_workspace_and_revision_restore_are_connected(self):
         editor=User.objects.create_superuser('desk-editor','desk@example.com','a-long-test-password')
         self.client.force_login(editor)

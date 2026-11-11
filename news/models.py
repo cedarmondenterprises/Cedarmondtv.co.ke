@@ -55,7 +55,7 @@ class Article(models.Model):
     author = models.ForeignKey(Author,on_delete=models.PROTECT)
     tags = models.ManyToManyField(Tag,blank=True)
     image = models.ImageField(upload_to='articles/%Y/%m/',blank=True,validators=[image_size,FileExtensionValidator(['jpg','jpeg','png','webp'])])
-    image_alt = models.CharField(max_length=200,blank=True)
+    image_alt = models.CharField(max_length=200,blank=True,help_text='Describe what is visible in the photo. Required when an image is attached.')
     image_credit = models.CharField(max_length=200,blank=True)
     status = models.CharField(max_length=12,choices=[('draft','Draft'),('review','In review'),('published','Published')],default='draft')
     published_at = models.DateTimeField(default=timezone.now,db_index=True,help_text='Future dates become visible automatically when reached.')

@@ -60,6 +60,10 @@ def home(request):
     live = Article.objects.live()
     lead = live.filter(featured=True).first() or live.first()
     rest = live.exclude(pk=lead.pk) if lead else live
+    top_stories = list(rest[:2])
+    latest = list(rest[2:7])
+    stories = list(rest[7:13])
+    already_shown = [item.pk for item in ([lead] if lead else []) + top_stories + latest + stories]
     logo_url = settings.SITE_URL + settings.STATIC_URL + 'cedarmond-mark.svg'
     publisher = organization_schema(logo_url)
     website_schema = {
@@ -79,10 +83,11 @@ def home(request):
     }
     context = {
         'lead': lead,
-        'top_stories': rest[:2],
-        'latest': live[:5],
-        'stories': rest[2:8],
-        'picks': live.filter(editors_pick=True)[:3],
+        'top_stories': top_stories,
+        'latest': latest,
+        'stories': stories,
+        'picks': list(live.filter(editors_pick=True).exclude(pk__in=already_shown)[:3]),
+        'has_supporting_stories': bool(top_stories or latest),
         'seo_title': 'Cedarmond TV | Kenyan News, Politics, Business & Culture',
         'seo_description': 'Independent journalism and original reporting from Kenya. Read the latest news, politics, business, county, culture and sports coverage.',
         'seo_image': absolute_image_url(lead.display_image) if lead and lead.display_image else logo_url,
