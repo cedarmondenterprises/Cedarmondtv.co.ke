@@ -1,5 +1,6 @@
 from datetime import timedelta
 from io import BytesIO
+import json
 import tempfile
 from unittest import skipUnless
 from unittest.mock import patch
@@ -31,6 +32,32 @@ class NewsroomTests(TestCase):
         Page.objects.create(title='About',slug='about',body='<p>Our newsroom.</p>',published=True)
         for url in ['/',self.article.get_absolute_url(),'/category/kenya/','/author/news-desk/','/latest/','/search/?q=verified','/pages/about/','/contact/','/newsletter/','/feed.xml','/sitemap.xml','/robots.txt','/healthz/']:
             self.assertEqual(self.client.get(url).status_code,200,url)
+    def test_search_visibility_and_seo_metadata(self):
+        response=self.client.get('/search/?q=verified')
+        self.assertContains(response,'name="robots" content="noindex,follow"')
+        self.assertContains(response,f'rel="canonical" href="{settings.SITE_URL}/search/"')
+        robots=self.client.get('/robots.txt')
+        self.assertContains(robots,f'Sitemap: {settings.SITE_URL}/sitemap.xml')
+        self.assertNotContains(robots,'Disallow: /search/')
+        article=self.client.get(self.article.get_absolute_url())
+        self.assertContains(article,'property="og:type" content="article"')
+        schema=json.loads(article.context['schema_json'])
+        self.assertEqual(schema['@type'],'NewsArticle')
+        self.assertEqual(schema['headline'],'A verified story')
+        self.assertEqual(schema['mainEntityOfPage']['@id'],settings.SITE_URL+'/story/verified/')
+        self.assertLessEqual(len(article.context['seo_title']),70)
+    def test_sitemap_lists_public_content_and_excludes_private_content(self):
+        topic=Tag.objects.create(name='Accountability',slug='accountability')
+        self.article.tags.add(topic)
+        Page.objects.create(title='About',slug='about',body='<p>Our newsroom.</p>',published=True)
+        Page.objects.create(title='Draft page',slug='draft-page',body='<p>Private.</p>',published=False)
+        Article.objects.create(title='Future report',slug='future-report',summary='Not live yet',body='<p>Private.</p>',category=self.category,author=self.author,status='published',published_at=timezone.now()+timedelta(days=1))
+        response=self.client.get('/sitemap.xml')
+        self.assertEqual(response.status_code,200)
+        for path in ['/','/latest/','/story/verified/','/category/kenya/','/author/news-desk/','/topic/accountability/','/pages/about/']:
+            self.assertContains(response,settings.SITE_URL+path)
+        self.assertNotContains(response,'future-report')
+        self.assertNotContains(response,'draft-page')
     def test_public_api_only_exposes_live_stories_and_safe_fields(self):
         response=self.client.get('/api/v1/articles/')
         self.assertEqual(response.status_code,200)

@@ -5,6 +5,38 @@ from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from news import views
-from news.feeds import LatestFeed, ArticleSitemap
-urlpatterns = [path('newsroom/preview/<int:pk>/',views.preview,name='preview'),path('admin/',admin.site.urls),path('api/schema/',SpectacularAPIView.as_view(),name='api-schema'),path('api/docs/',SpectacularSwaggerView.as_view(url_name='api-schema'),name='api-docs'),path('api/redoc/',SpectacularRedocView.as_view(url_name='api-schema'),name='api-redoc'),path('api/v1/',include('news.api_urls')),path('',views.home,name='home'),path('latest/',views.listing,name='latest'),path('search/',views.listing,name='search'),path('category/<slug:slug>/',views.listing,{'kind':'category'},name='category'),path('author/<slug:slug>/',views.listing,{'kind':'author'},name='author'),path('topic/<slug:slug>/',views.listing,{'kind':'tag'},name='tag'),path('story/<slug:slug>/comments/',views.story_comment,name='story_comment'),path('story/<slug:slug>/',views.article,name='article'),path('newsletter/',views.newsletter,name='newsletter'),path('newsletter/confirm/<str:token>/',views.subscription_action,{'action':'confirm'}),path('newsletter/unsubscribe/<str:token>/',views.subscription_action,{'action':'unsubscribe'}),path('contact/',views.contact,name='contact'),path('pages/<slug:slug>/',views.page,name='page'),path('feed.xml',LatestFeed(),name='feed'),path('sitemap.xml',sitemap,{'sitemaps':{'articles':ArticleSitemap}}),path('robots.txt',views.robots),path('healthz/',views.health)]
+from news.feeds import ArticleSitemap, AuthorSitemap, CategorySitemap, LatestFeed, PageSitemap, StaticSitemap, TagSitemap
+
+urlpatterns = [
+    path('newsroom/preview/<int:pk>/', views.preview, name='preview'),
+    path('admin/', admin.site.urls),
+    path('api/schema/', SpectacularAPIView.as_view(), name='api-schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='api-schema'), name='api-docs'),
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='api-schema'), name='api-redoc'),
+    path('api/v1/', include('news.api_urls')),
+    path('', views.home, name='home'),
+    path('latest/', views.listing, name='latest'),
+    path('search/', views.listing, name='search'),
+    path('category/<slug:slug>/', views.listing, {'kind': 'category'}, name='category'),
+    path('author/<slug:slug>/', views.listing, {'kind': 'author'}, name='author'),
+    path('topic/<slug:slug>/', views.listing, {'kind': 'tag'}, name='tag'),
+    path('story/<slug:slug>/comments/', views.story_comment, name='story_comment'),
+    path('story/<slug:slug>/', views.article, name='article'),
+    path('newsletter/', views.newsletter, name='newsletter'),
+    path('newsletter/confirm/<str:token>/', views.subscription_action, {'action': 'confirm'}),
+    path('newsletter/unsubscribe/<str:token>/', views.subscription_action, {'action': 'unsubscribe'}),
+    path('contact/', views.contact, name='contact'),
+    path('pages/<slug:slug>/', views.page, name='page'),
+    path('feed.xml', LatestFeed(), name='feed'),
+    path('sitemap.xml', sitemap, {'sitemaps': {
+        'static': StaticSitemap,
+        'articles': ArticleSitemap,
+        'categories': CategorySitemap,
+        'authors': AuthorSitemap,
+        'topics': TagSitemap,
+        'pages': PageSitemap,
+    }}),
+    path('robots.txt', views.robots),
+    path('healthz/', views.health),
+]
 if settings.DEBUG: urlpatterns += static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)

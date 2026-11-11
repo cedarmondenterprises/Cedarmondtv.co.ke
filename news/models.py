@@ -27,6 +27,7 @@ class Tag(models.Model):
     name = models.CharField(max_length=60)
     slug = models.SlugField(unique=True)
     def __str__(self): return self.name
+    def get_absolute_url(self): return reverse('tag',args=[self.slug])
 
 class Author(models.Model):
     name = models.CharField(max_length=100)
@@ -131,6 +132,8 @@ class Page(models.Model):
     title = models.CharField(max_length=180)
     slug = models.SlugField(unique=True)
     body = ProseEditorField(extensions=EXTENSIONS,sanitize=True)
+    seo_title = models.CharField(max_length=70,blank=True)
+    seo_description = models.CharField(max_length=160,blank=True)
     published = models.BooleanField(default=False)
     position = models.PositiveIntegerField(default=0)
     updated_at = models.DateTimeField(auto_now=True)

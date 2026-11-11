@@ -124,6 +124,8 @@ class NamedAdmin(admin.ModelAdmin):
 class PageAdmin(ReadOnlyHistoryAdmin):
     list_display=['title','published','position','updated_at']
     prepopulated_fields={'slug':('title',)}
+    readonly_fields=['updated_at']
+    fieldsets=[('Page content',{'fields':['title','slug','body','published','position']}),('Search appearance',{'fields':['seo_title','seo_description','updated_at'],'classes':['collapse']})]
 
 @admin.register(Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):

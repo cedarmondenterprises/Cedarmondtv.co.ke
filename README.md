@@ -46,6 +46,12 @@ The newsroom also includes CMS-style editorial cards, a monthly assignment/deadl
 
 The newsroom landing page now leads with staff actions instead of dropping editors into a model list. The public navigation has a mobile section menu and a direct Latest route. Archive pagination retains active search and section filters. Page transitions run only where the browser supports them and the visitor has not requested reduced motion. We use Django's built-in admin templates and existing editor widgets rather than adding a second admin theme stack.
 
+## Search visibility
+
+Public stories and pages emit canonical URLs, unique titles/descriptions, social sharing metadata and structured data. Articles include `NewsArticle` and breadcrumb markup with author, publisher, dates, section, tags and available images. The XML sitemap lists live stories, sections, authors, topics and published pages on the configured `SITE_URL`; search results are marked `noindex` without blocking crawlers from seeing that instruction. `/robots.txt` advertises the sitemap, and `/feed.xml` provides RSS. Editors can set SEO title/description overrides on stories and managed pages.
+
+To monitor discovery, add `cedarmondtv.co.ke` as a **Domain property** in Google Search Console. Verify it with the DNS TXT record supplied by Google in Cloudflare, then submit `https://cedarmondtv.co.ke/sitemap.xml` in Search Console. Verification and submission are external account steps; being indexed or ranking for a query is not guaranteed by markup alone.
+
 ## Plug in a direct advertisement
 
 Sign in to `/admin/` and choose **Ads and sponsorships** (or **Ad placements** from the editorial desk). Create or edit one creative for each available slot: **Homepage banner** and **Article sidebar**. Upload an approved JPG, PNG or WebP banner, enter its destination URL and label, then activate the placement. Only active placements appear on the public site. The current implementation supports image banners for direct-sold placements; it does not claim to track impressions or clicks. A separate ad server is unnecessary for this initial setup.
