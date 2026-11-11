@@ -1,14 +1,34 @@
 from django import forms
 from django.contrib import admin, messages
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import transaction
+from django.urls import path
 from simple_history.admin import SimpleHistoryAdmin
-from .models import Article, Category, Author, Tag, Subscription, ReaderMessage, AdPlacement, Page, Campaign
+from .models import Article, Category, Author, Tag, Subscription, ReaderMessage, AdPlacement, Page, Campaign, MediaAsset, DraftRecovery
 from .newsletter import queue_campaign
 admin.site.site_header = 'Cedarmond TV · Newsroom'
 admin.site.site_title = 'Cedarmond TV Newsroom'
 admin.site.index_title = 'Publishing desk'
 
+class ArticleAdminForm(forms.ModelForm):
+    recovery_key=forms.CharField(required=False,widget=forms.HiddenInput)
+    loaded_version=forms.CharField(required=False,widget=forms.HiddenInput)
+    class Meta:
+        model=Article
+        fields='__all__'
+    def clean(self):
+        cleaned=super().clean()
+        if self.instance.pk:
+            current=Article.objects.select_for_update().filter(pk=self.instance.pk).values_list('updated_at',flat=True).first()
+            expected=self.data.get('loaded_version','')
+            if current and expected != current.isoformat():
+                raise forms.ValidationError('This story changed after you opened it. Reload the latest version before saving.')
+        return cleaned
+
 class ReadOnlyHistoryAdmin(SimpleHistoryAdmin):
+    def history_view(self,request,object_id,extra_context=None):
+        extra_context={**(extra_context or {}),'can_restore':self.model is Article and request.user.has_perm('news.publish_article') and request.user.has_perm('news.add_article')}
+        return super().history_view(request,object_id,extra_context)
     def history_form_view(self,request,object_id,version_id,extra_context=None):
         # The library's disabled button alone does not reject crafted POSTs.
         if request.method != 'GET': raise PermissionDenied
@@ -19,6 +39,7 @@ class ReadOnlyHistoryAdmin(SimpleHistoryAdmin):
 
 @admin.register(Article)
 class ArticleAdmin(ReadOnlyHistoryAdmin):
+    form=ArticleAdminForm
     list_display = ['title','category','author','status','published_at','featured']
     list_filter = ['status','category','featured']
     search_fields = ['title','summary']
@@ -26,9 +47,36 @@ class ArticleAdmin(ReadOnlyHistoryAdmin):
     filter_horizontal = ['tags']
     date_hierarchy = 'published_at'
     readonly_fields = ['updated_at','owner','preview_link']
+    change_list_template = 'admin/news/article_change_list.html'
+    change_form_template = 'admin/news/article_change_form.html'
+    class Media:
+        js = ('recovery.js',)
     list_select_related = ['category','author']
     actions = ['submit_for_review']
-    fieldsets = [('Story',{'fields':('title','slug','summary','body')}),('Attribution',{'fields':('author','category','tags','owner')}),('Photography',{'fields':('image','image_alt','image_credit')}),('Publishing',{'fields':('status','published_at','featured','breaking','editors_pick','preview_link')}),('Search appearance',{'fields':('seo_title','seo_description','updated_at'),'classes':('collapse',)})]
+    fieldsets = [('Story',{'fields':('title','slug','summary','body')}),('Attribution',{'fields':('author','category','tags','owner')}),('Photography',{'fields':('media_asset','image','image_alt','image_credit')}),('Assignment',{'fields':('deadline','assignment_notes'),'classes':('collapse',)}),('Publishing',{'fields':('status','published_at','featured','breaking','editors_pick','preview_link')}),('Search appearance',{'fields':('seo_title','seo_description','updated_at'),'classes':('collapse',)})]
+    def get_urls(self):
+        from . import newsroom
+        custom=[
+            path('desk/',self.admin_site.admin_view(lambda request: newsroom.desk(request,self.admin_site)),name='news_article_desk'),
+            path('recovery/<uuid:key>/',self.admin_site.admin_view(newsroom.recovery),name='news_article_recovery'),
+            path('recovery/<uuid:key>/discard/',self.admin_site.admin_view(newsroom.discard_recovery),name='news_article_discard_recovery'),
+            path('<int:pk>/workspace/',self.admin_site.admin_view(lambda request,pk: newsroom.workspace(request,pk,self.admin_site)),name='news_article_workspace'),
+            path('<int:pk>/restore/<int:version>/',self.admin_site.admin_view(lambda request,pk,version: newsroom.restore_revision(request,pk,version,self.admin_site)),name='news_article_restore_revision'),
+        ]
+        return custom+super().get_urls()
+    def render_change_form(self,request,context,add=False,change=False,form_url='',obj=None):
+        import uuid
+        context['recovery_enabled']=True
+        recovery=None
+        key=request.GET.get('recovery') or request.POST.get('recovery_key')
+        if key:
+            recovery=DraftRecovery.objects.filter(pk=key,user=request.user).first()
+            if recovery and recovery.article_id and (not obj or recovery.article_id != obj.pk): recovery=None
+        if recovery is None and obj and obj.pk:
+            recovery=DraftRecovery.objects.filter(user=request.user,article=obj).first()
+        context['recovery_id']=recovery.pk if recovery else uuid.uuid4()
+        context['loaded_version']=obj.updated_at.isoformat() if obj and obj.pk else ''
+        return super().render_change_form(request,context,add,change,form_url,obj)
     @admin.display(description='Preview')
     def preview_link(self,obj):
         if not obj.pk: return 'Save the draft to preview it.'
@@ -53,6 +101,11 @@ class ArticleAdmin(ReadOnlyHistoryAdmin):
     def save_model(self,request,obj,form,change):
         if not obj.owner_id: obj.owner=request.user
         super().save_model(request,obj,form,change)
+        key=request.POST.get('recovery_key')
+        if key:
+            copies=DraftRecovery.objects.filter(pk=key,user=request.user)
+            copies=copies.filter(article=obj) if change else copies.filter(article__isnull=True)
+            copies.delete()
     @admin.action(description='Submit selected drafts for editorial review',permissions=['change'])
     def submit_for_review(self,request,queryset):
         count=0
@@ -105,3 +158,20 @@ class CampaignAdmin(admin.ModelAdmin):
             except ValueError as exc: self.message_user(request,str(exc),level=messages.ERROR)
             else: self.message_user(request,f'{count} messages queued for {campaign.subject}.')
 admin.site.register(AdPlacement)
+
+@admin.register(MediaAsset)
+class MediaAssetAdmin(admin.ModelAdmin):
+    list_display=['title','preview','credit','rights','created_by','created_at']
+    list_display_links=['title']
+    search_fields=['title','alt_text','credit','rights']
+    list_filter=['created_at']
+    readonly_fields=['preview','created_by','created_at','thumbnail']
+    fields=['title','image','thumbnail','preview','alt_text','credit','rights','created_by','created_at']
+    def save_model(self,request,obj,form,change):
+        if not obj.created_by_id: obj.created_by=request.user
+        super().save_model(request,obj,form,change)
+    @admin.display(description='Preview')
+    def preview(self,obj):
+        if not obj or not obj.image: return 'Upload an image to preview it.'
+        from django.utils.html import format_html
+        return format_html('<img src="{}" alt="{}" style="max-width:160px;height:auto">',obj.thumbnail.url if obj.thumbnail else obj.image.url,obj.alt_text)

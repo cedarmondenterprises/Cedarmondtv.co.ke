@@ -6,7 +6,7 @@ A working, self-hosted Kenyan news publishing application for **cedarmondtv.co.k
 
 - **Django + PostgreSQL**: publishing, permissions, durable content and subscriber records.
 - **django-prose-editor (Tiptap/ProseMirror) + nh3**: rich-text editing and server-side HTML sanitization.
-- **django-simple-history**: timestamped article/page revision records and author tracking. Historical revisions are read-only; edit the current article to apply a correction.
+- **django-simple-history**: timestamped article/page revision records and author tracking. Editors can review a revision and restore its text into a separate unpublished draft, keeping the live article intact.
 - **django-post-office**: durable SMTP queue, delivery logs, retries and an independent worker.
 - **Valkey + django-redis + django-ratelimit**: cross-worker IP limits for public forms.
 - **Pillow**: WebP photographs, small card thumbnails, metadata removal.
@@ -40,6 +40,8 @@ See [OPEN_SOURCE.md](docs/OPEN_SOURCE.md) for upstream projects and licenses. Py
 | 20 | Search/distribution and operations | SEO overrides, Open Graph, JSON-LD, RSS, sitemap, Docker, health check, backups and CI |
 
 New installations start with **no articles**. The empty state is honest. The newsroom must publish real reporting and approved informational pages before public launch. Newsletter calls to action are absent until `NEWSLETTER_ENABLED=1`; without configuration the app does not claim that email delivery is available.
+
+The newsroom also includes CMS-style editorial cards, a monthly assignment/deadline desk, private review discussions, browser draft recovery, stale-edit detection, reusable rights-attributed media, and permanent redirects for changed story URLs. The public homepage and archives use responsive red-and-white story cards. These workflows use the existing Django admin, database and open-source packages; there is no separate SaaS dependency.
 
 ## Local development
 
@@ -76,9 +78,10 @@ Caddy obtains HTTPS certificates after DNS and network access are correct. Postg
 1. Run `setup_newsroom` to create sections and Reporter/Editor groups (no users or content).
 2. Create staff users and assign groups. Reporters own new stories. Editors can publish/schedule and manage author records.
 3. Create an author profile. Write a draft with original reporting, summary, category, tags, image credit and alt text.
-4. Open **Private preview** from the article form. Submit drafts for review from the article list.
-5. An editor sets status to Published and chooses a publication date. Future dates are enforced in every public query.
-6. Create approved About, privacy and editorial policy entries under **Pages**; publish them to expose footer links. Nothing is pre-filled with invented policies.
+4. Open **Editorial desk** from the article list to see deadlines, assignments, review cards and private draft-recovery copies. Add review notes in the story’s **Editorial discussion** workspace.
+5. Open **Private preview** from the article form. Submit drafts for review from the article list. Draft text is recovered privately in the browser; uploads and publishing settings still need the normal Save action.
+6. Editors set status to Published and choose a publication date. Future dates are enforced in every public query. The article’s history view can restore prior story text as a new unpublished draft.
+7. Create approved About, privacy and editorial policy entries under **Pages**; publish them to expose footer links. Nothing is pre-filled with invented policies.
 
 ## Email delivery
 
@@ -107,3 +110,5 @@ Backups must be copied off the VM, scheduled by the operator and restore-tested.
 ## Upgrade from the first foundation commit
 
 Back up first. Migration 0002 deletes only articles explicitly marked as generated demos, removes unused generated author/tag records, converts existing plain-text articles safely to HTML, and adds revision/campaign data. Real articles are retained. Existing uploaded files are not deleted automatically; remove unused demo files separately only after reviewing media references. Existing subscriptions remain, but old confirmation links are invalidated by the versioned token format.
+
+Run `python manage.py migrate` after updating to apply migration 0003. It adds assignment metadata, the media library, private editorial comments, draft recovery and permanent article-URL history. Existing article slugs are registered automatically, so their addresses keep working after an edit.

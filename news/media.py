@@ -4,8 +4,13 @@ from django.core.files.base import ContentFile
 from PIL import Image, ImageOps
 
 def optimize_article_image(article):
-    if not article.image or article.image._committed:
+    if not article.image:
+        article.thumbnail = ''
         return
+    if article.image._committed: return
+    from django.core.exceptions import ValidationError
+    if article.image.size > 8 * 1024 * 1024:
+        raise ValidationError('Images must be 8 MB or smaller.')
     article.image.open('rb')
     with Image.open(article.image) as original:
         picture=ImageOps.exif_transpose(original).convert('RGB')

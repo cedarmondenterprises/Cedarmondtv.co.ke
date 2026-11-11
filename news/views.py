@@ -17,7 +17,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
-from .models import Article, Category, Author, Tag, Subscription, Page
+from .models import Article, ArticleURL, Category, Author, Tag, Subscription, Page
 from .forms import SubscribeForm, ContactForm
 
 def home(request):
@@ -41,13 +41,17 @@ def listing(request,kind=None,slug=None):
     return render(request,'news/list.html',{'page':Paginator(articles,9).get_page(request.GET.get('page')),'title':title,'description':description,'query':query})
 
 def article(request,slug):
-    item = get_object_or_404(Article.objects.live().prefetch_related('tags'),slug=slug)
+    item = Article.objects.live().prefetch_related('tags').filter(slug=slug).first()
+    if item is None:
+        reservation=get_object_or_404(ArticleURL,slug=slug)
+        target=get_object_or_404(Article.objects.live(),pk=reservation.article_id)
+        return redirect(target.get_absolute_url(),permanent=True)
     return render_article(request,item)
 
 def render_article(request,item,preview=False):
     url = settings.SITE_URL + item.get_absolute_url()
     schema = {'@context':'https://schema.org','@type':'NewsArticle','headline':item.title,'description':item.summary,'datePublished':item.published_at.isoformat(),'dateModified':item.updated_at.isoformat(),'author':[{'@type':'Person','name':item.author.name,'url':settings.SITE_URL+item.author.get_absolute_url()}],'publisher':{'@type':'Organization','name':'Cedarmond TV'},'mainEntityOfPage':url}
-    if item.image: schema['image'] = [settings.SITE_URL+item.image.url]
+    if item.display_image: schema['image'] = [settings.SITE_URL+item.display_image.url]
     return render(request,'news/article.html',{'article':item,'preview':preview,'related':Article.objects.live().filter(category=item.category).exclude(pk=item.pk)[:3],'canonical':url,'share_url':quote(url,safe=''),'share_text':quote(item.title+' '+url,safe=''),'schema_json':json.dumps(schema).replace('<',r'\u003c')})
 
 def throttled(request,key):

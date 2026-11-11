@@ -1,1 +1,1 @@
-{% if item.image %}<img src="{% if not eager and item.thumbnail %}{{ item.thumbnail.url }}{% else %}{{ item.image.url }}{% endif %}" alt="{{ item.image_alt }}" width="1200" height="800" {% if eager %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>{% endif %}
+{% if item.display_image %}<img src="{% if not eager and item.display_thumbnail %}{{ item.display_thumbnail.url }}{% else %}{{ item.display_image.url }}{% endif %}" alt="{{ item.display_alt }}" width="1200" height="800" {% if eager %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>{% endif %}

@@ -5,7 +5,7 @@ from django.utils.html import strip_tags
 from django_prose_editor.fields import ProseEditorField
 from simple_history.models import HistoricalRecords
 from .editor import EXTENSIONS, sanitize_html
-from django.db import models
+from django.db import models, transaction
 from django.urls import reverse
 from django.utils import timezone
 from django.core.validators import FileExtensionValidator
@@ -37,7 +37,7 @@ class Author(models.Model):
 
 class ArticleQuerySet(models.QuerySet):
     def live(self):
-        return self.filter(status='published',published_at__lte=timezone.now()).select_related('category','author')
+        return self.filter(status='published',published_at__lte=timezone.now()).select_related('category','author','media_asset')
 
 class Article(models.Model):
     title = models.CharField(max_length=220)
@@ -47,6 +47,9 @@ class Article(models.Model):
     history = HistoricalRecords()
     owner = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL,null=True,blank=True,related_name='articles')
     thumbnail = models.ImageField(upload_to='thumbnails/%Y/%m/',blank=True,editable=False)
+    media_asset = models.ForeignKey('MediaAsset',on_delete=models.SET_NULL,null=True,blank=True,related_name='articles')
+    deadline = models.DateTimeField(null=True,blank=True,db_index=True)
+    assignment_notes = models.TextField(blank=True,max_length=3000,help_text='Private instructions for the reporter; never shown publicly.')
     category = models.ForeignKey(Category,on_delete=models.PROTECT)
     author = models.ForeignKey(Author,on_delete=models.PROTECT)
     tags = models.ManyToManyField(Tag,blank=True)
@@ -72,12 +75,29 @@ class Article(models.Model):
     def reading_minutes(self): return max(1,math.ceil(len(strip_tags(self.body).split())/220))
     @property
     def rendered_body(self): return sanitize_html(self.body)
+    @property
+    def display_image(self): return self.image or (self.media_asset.image if self.media_asset_id else None)
+    @property
+    def display_thumbnail(self): return self.thumbnail if self.image else (self.media_asset.thumbnail if self.media_asset_id else None)
+    @property
+    def display_alt(self): return self.image_alt if self.image else (self.media_asset.alt_text if self.media_asset_id else '')
+    @property
+    def display_credit(self): return self.image_credit if self.image else (self.media_asset.credit if self.media_asset_id else '')
+    @transaction.atomic
     def save(self,*args,**kwargs):
+        # Serialize URL changes and reserve every current/past slug permanently.
+        previous = type(self).objects.select_for_update().filter(pk=self.pk).values_list('slug',flat=True).first() if self.pk else None
         self.body = sanitize_html(self.body)
         from .media import optimize_article_image
         optimize_article_image(self)
         super().save(*args,**kwargs)
+        for slug in {self.slug, previous} - {None, ''}:
+            reservation, _ = ArticleURL.objects.get_or_create(slug=slug,defaults={'article':self})
+            if reservation.article_id != self.pk:
+                raise ValidationError({'slug':'This address belongs to another story, including its URL history.'})
     def clean(self):
+        if ArticleURL.objects.filter(slug=self.slug).exclude(article_id=self.pk).exists():
+            raise ValidationError({'slug':'This address is reserved by another story.'})
         if self.image and not self.image_alt:
             raise ValidationError({'image_alt':'Describe the image for readers using assistive technology.'})
 
@@ -138,3 +158,44 @@ class CampaignDelivery(models.Model):
     email = models.ForeignKey('post_office.Email',on_delete=models.SET_NULL,null=True,blank=True)
     class Meta:
         constraints=[models.UniqueConstraint(fields=['campaign','subscriber'],name='one_campaign_per_subscriber')]
+
+
+class ArticleURL(models.Model):
+    slug = models.SlugField(unique=True,max_length=240)
+    article = models.ForeignKey(Article,on_delete=models.CASCADE,related_name='url_history')
+    def __str__(self): return self.slug
+
+class MediaAsset(models.Model):
+    title = models.CharField(max_length=180)
+    image = models.ImageField(upload_to='library/%Y/%m/',validators=[image_size,FileExtensionValidator(['jpg','jpeg','png','webp'])])
+    thumbnail = models.ImageField(upload_to='library/thumbnails/%Y/%m/',blank=True,editable=False)
+    alt_text = models.CharField(max_length=200)
+    credit = models.CharField(max_length=200)
+    rights = models.CharField(max_length=300,help_text='Record ownership, licence or permission to publish.')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL,null=True,blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    def __str__(self): return self.title
+    def save(self,*args,**kwargs):
+        from .media import optimize_article_image
+        optimize_article_image(self)
+        super().save(*args,**kwargs)
+
+class EditorialComment(models.Model):
+    article = models.ForeignKey(Article,on_delete=models.CASCADE,related_name='editorial_comments')
+    author = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL,null=True)
+    message = models.TextField(max_length=5000)
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True,blank=True)
+    resolved_by = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL,null=True,blank=True,related_name='+')
+    class Meta: ordering=['created_at','pk']
+
+class DraftRecovery(models.Model):
+    id = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
+    article = models.ForeignKey(Article,on_delete=models.CASCADE,null=True,blank=True)
+    data = models.JSONField(default=dict)
+    version = models.PositiveIntegerField(default=0)
+    base_updated_at = models.CharField(max_length=60,blank=True)
+    saved_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering=['-saved_at']

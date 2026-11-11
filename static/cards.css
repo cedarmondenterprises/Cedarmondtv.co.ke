@@ -1,0 +1,17 @@
+/* Card language used consistently on featured, archive and latest-story modules. */
+.top-stories .story-card,.card-grid .story-card{background:#fff;border:1px solid #e8e5e1;border-radius:3px;overflow:hidden;box-shadow:0 3px 12px rgba(24,22,20,.045)}
+.top-stories .story-card{padding:0 0 15px}
+.card-grid .story-card{padding-bottom:15px}
+.story-card .eyebrow,.story-card h3,.story-card .meta{margin-left:15px;margin-right:15px}
+.story-card .card-image{margin:0 0 14px}
+.story-card h3{font-size:21px;line-height:1.2}
+.story-card .meta{margin-top:10px}
+.top-stories .story-card+.story-card{margin-top:17px;padding-top:0;border-top:1px solid #e8e5e1}
+.latest{background:#f8f7f5;padding:18px;border:1px solid #e8e5e1;align-self:start}
+.latest article{background:white;border:1px solid #e8e5e1;border-radius:3px;margin-top:10px;padding:14px}
+.latest .aside-heading{padding-bottom:12px}
+.latest .text-link{margin-left:2px}
+.card-grid{gap:24px}
+.picks .story-card{box-shadow:none}
+.story-card:hover{box-shadow:0 6px 18px rgba(24,22,20,.09)}
+@media(max-width:650px){.top-stories .story-card{padding:0 0 12px}.top-stories .story-card+.story-card{padding-top:0;margin:0;border:0}.top-stories .story-card .eyebrow,.top-stories .story-card h3,.top-stories .story-card .meta{margin-left:10px;margin-right:10px}.top-stories .story-card h3{font-size:18px}.card-grid .story-card{padding:0 0 18px;background:white;border-radius:3px;box-shadow:none}.card-grid .story-card .eyebrow,.card-grid .story-card h3,.card-grid .story-card .meta{margin-left:0;margin-right:0}.card-grid .story-card .card-image{margin:0}.card-grid .story-card .meta{font-size:9px}.latest{padding:15px}.latest article{padding:13px}}

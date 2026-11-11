@@ -8,6 +8,6 @@ class Command(BaseCommand):
             Category.objects.get_or_create(slug=name.lower(),defaults={'name':name,'position':index})
         reporter,_ = Group.objects.get_or_create(name='Reporter')
         editor,_ = Group.objects.get_or_create(name='Editor')
-        reporter.permissions.set(Permission.objects.filter(content_type__app_label='news',codename__in=['add_article','view_article','change_article','view_category','view_author','view_tag']))
+        reporter.permissions.set(Permission.objects.filter(content_type__app_label='news',codename__in=['add_article','view_article','change_article','view_category','view_author','view_tag','view_mediaasset']))
         editor.permissions.set(Permission.objects.filter(content_type__app_label='news').exclude(content_type__model__in=['subscription','campaign','campaigndelivery']))
         self.stdout.write(self.style.SUCCESS('Newsroom roles and sections ready. Grant staff status and assign groups in admin.'))

@@ -13,7 +13,7 @@ from django.contrib.auth.models import User, Group, Permission
 from django.core.management import call_command
 from PIL import Image
 from post_office.models import Email, STATUS
-from .models import Article, Author, Category, Subscription, ReaderMessage, Page, Campaign, CampaignDelivery
+from .models import Article, ArticleURL, Author, Category, Subscription, ReaderMessage, Page, Campaign, CampaignDelivery, DraftRecovery, EditorialComment
 from .newsletter import subscription_token, queue_campaign
 
 PRODUCTION_MAIL_CONFIG = settings.POST_OFFICE
@@ -31,6 +31,58 @@ class NewsroomTests(TestCase):
         Page.objects.create(title='About',slug='about',body='<p>Our newsroom.</p>',published=True)
         for url in ['/',self.article.get_absolute_url(),'/category/kenya/','/author/news-desk/','/latest/','/search/?q=verified','/pages/about/','/contact/','/newsletter/','/feed.xml','/sitemap.xml','/robots.txt','/healthz/']:
             self.assertEqual(self.client.get(url).status_code,200,url)
+    def test_old_story_addresses_permanently_redirect_to_current_slug(self):
+        self.article.slug='new-address';self.article.save()
+        response=self.client.get('/story/verified/')
+        self.assertEqual(response.status_code,301)
+        self.assertEqual(response['Location'],'/story/new-address/')
+        self.assertEqual(ArticleURL.objects.filter(article=self.article).count(),2)
+    def test_homepage_uses_premium_story_cards_and_loads_card_styles(self):
+        self.article.featured=True;self.article.save()
+        for number in range(2):
+            Article.objects.create(title=f'Additional report {number}',slug=f'additional-report-{number}',summary='Reporting from Kenya',body='<p>Verified reporting.</p>',category=self.category,author=self.author,status='published')
+        response=self.client.get('/')
+        self.assertContains(response,'class="story-card"')
+        self.assertContains(response,'cards.css')
+    def test_editorial_desk_workspace_and_revision_restore_are_connected(self):
+        editor=User.objects.create_superuser('desk-editor','desk@example.com','a-long-test-password')
+        self.client.force_login(editor)
+        self.article.status='draft';self.article.deadline=timezone.now()+timedelta(days=1);self.article.save()
+        version=self.article.history.first().history_id
+        self.assertEqual(self.client.get('/admin/news/article/desk/').status_code,200)
+        history=self.client.get(f'/admin/news/article/{self.article.pk}/history/')
+        self.assertEqual(history.status_code,200)
+        self.assertContains(history,'Restore as a separate draft')
+        self.assertEqual(self.client.get(f'/admin/news/article/{self.article.pk}/workspace/').status_code,200)
+        response=self.client.post(f'/admin/news/article/{self.article.pk}/workspace/',{'message':'Add source attribution before publication.'})
+        self.assertEqual(response.status_code,302)
+        self.assertEqual(EditorialComment.objects.get().message,'Add source attribution before publication.')
+        preview=self.client.get(f'/admin/news/article/{self.article.pk}/restore/{version}/')
+        self.assertEqual(preview.status_code,200)
+        restored=self.client.post(f'/admin/news/article/{self.article.pk}/restore/{version}/')
+        self.assertEqual(restored.status_code,302)
+        copy=Article.objects.exclude(pk=self.article.pk).get()
+        self.assertEqual(copy.status,'draft');self.assertEqual(copy.body,self.article.history.get(history_id=version).body)
+        self.assertEqual(self.article.title,'A verified story')
+    def test_draft_recovery_is_private_and_versioned(self):
+        reporter=self.make_reporter();self.client.force_login(reporter)
+        key='cb1baac3-0cf2-48b8-9fdc-2f0390a05bc2'
+        url=f'/admin/news/article/recovery/{key}/'
+        self.assertEqual(self.client.get(url).json()['version'],0)
+        payload={'version':0,'article_id':None,'base_updated_at':'','data':{'title':'Recovered headline','slug':'recovered-headline','summary':'Saved privately','body':'<p>Working copy</p><script>bad()</script>','seo_title':'','seo_description':'','category':'1','author':'1','media_asset':'','tags':[]}}
+        response=self.client.post(url,data=__import__('json').dumps(payload),content_type='application/json')
+        self.assertEqual(response.status_code,200,response.content)
+        self.assertEqual(response.json()['version'],1)
+        self.assertNotIn('<script>',DraftRecovery.objects.get().data['body'])
+        self.client.force_login(self.make_reporter('second-reporter'))
+        self.assertFalse(self.client.get(url).json()['exists'])
+    def test_article_form_rejects_a_stale_edit(self):
+        from .admin import ArticleAdminForm
+        old=self.article.updated_at.isoformat()
+        self.article.summary='Updated by another editor';self.article.save()
+        form=ArticleAdminForm(data={'loaded_version':old,'recovery_key':''},instance=self.article)
+        self.assertFalse(form.is_valid())
+        self.assertTrue(any('changed after you opened it' in error for error in form.non_field_errors()))
     def test_draft_and_future_articles_are_not_public(self):
         for status,date in [('draft',timezone.now()),('published',timezone.now()+timedelta(days=1)),('review',timezone.now())]:
             self.article.status=status; self.article.published_at=date; self.article.save()
