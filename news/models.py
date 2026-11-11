@@ -60,6 +60,7 @@ class Article(models.Model):
     status = models.CharField(max_length=12,choices=[('draft','Draft'),('review','In review'),('published','Published')],default='draft')
     published_at = models.DateTimeField(default=timezone.now,db_index=True,help_text='Future dates become visible automatically when reached.')
     updated_at = models.DateTimeField(auto_now=True)
+    homepage_rank = models.PositiveSmallIntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(99)], help_text='Higher numbers appear earlier among homepage stories. Leave at 0 to use the normal publication order.')
     featured = models.BooleanField(default=False)
     breaking = models.BooleanField(default=False)
     editors_pick = models.BooleanField(default=False)

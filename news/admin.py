@@ -48,7 +48,7 @@ class ReadOnlyHistoryAdmin(SimpleHistoryAdmin):
 @admin.register(Article)
 class ArticleAdmin(ReadOnlyHistoryAdmin):
     form=ArticleAdminForm
-    list_display = ['title','category','author','status','published_at','featured']
+    list_display = ['title','category','author','status','homepage_rank','published_at','featured']
     list_filter = ['status','category','featured']
     search_fields = ['title','summary']
     prepopulated_fields = {'slug':('title',)}
@@ -61,7 +61,7 @@ class ArticleAdmin(ReadOnlyHistoryAdmin):
         js = ('recovery.js',)
     list_select_related = ['category','author']
     actions = ['submit_for_review']
-    fieldsets = [('Story',{'fields':('title','slug','summary','body')}),('Attribution',{'fields':('author','category','tags','owner')}),('Photography',{'fields':('media_asset','image','image_alt','image_credit')}),('Assignment',{'fields':('deadline','assignment_notes'),'classes':('collapse',)}),('Publishing',{'fields':('status','published_at','featured','breaking','editors_pick','preview_link')}),('Search appearance',{'fields':('seo_title','seo_description','updated_at'),'classes':('collapse',)})]
+    fieldsets = [('Story',{'fields':('title','slug','summary','body')}),('Attribution',{'fields':('author','category','tags','owner')}),('Photography',{'fields':('media_asset','image','image_alt','image_credit')}),('Assignment',{'fields':('deadline','assignment_notes'),'classes':('collapse',)}),('Publishing',{'fields':('status','published_at','homepage_rank','featured','breaking','editors_pick','preview_link')}),('Search appearance',{'fields':('seo_title','seo_description','updated_at'),'classes':('collapse',)})]
     def get_form(self,request,obj=None,change=False,**kwargs):
         fields=kwargs.get('fields')
         if fields is None:
@@ -102,7 +102,7 @@ class ArticleAdmin(ReadOnlyHistoryAdmin):
         return qs if request.user.has_perm('news.publish_article') else qs.filter(owner=request.user)
     def get_readonly_fields(self,request,obj=None):
         fields = list(super().get_readonly_fields(request,obj))
-        if not request.user.has_perm('news.publish_article'): fields += ['status','published_at','featured','breaking','editors_pick']
+        if not request.user.has_perm('news.publish_article'): fields += ['status','published_at','homepage_rank','featured','breaking','editors_pick']
         return fields
     def has_view_permission(self,request,obj=None):
         if obj and not request.user.has_perm('news.publish_article') and obj.owner_id != request.user.pk: return False

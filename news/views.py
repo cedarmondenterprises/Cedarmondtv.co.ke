@@ -1,4 +1,5 @@
 import json
+from datetime import timedelta
 from urllib.parse import quote
 from django.conf import settings
 from django.core import signing
@@ -10,7 +11,7 @@ from django_ratelimit.decorators import ratelimit
 from .security import rate_key
 from .newsletter import request_confirmation, unsubscribe
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.db import connection
 from django.http import HttpResponse, JsonResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
@@ -19,7 +20,7 @@ from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 from django.utils.html import strip_tags
 from django.utils.text import Truncator
-from .models import Article, ArticleURL, Category, Author, Tag, Subscription, Page, StoryComment
+from .models import Article, ArticleDailyView, ArticleURL, Category, Author, Tag, Subscription, Page, StoryComment
 from .analytics import record_article_view
 from .forms import SubscribeForm, ContactForm, StoryCommentForm
 
@@ -59,12 +60,18 @@ def branded_title(title):
 
 def home(request):
     live = Article.objects.live()
-    lead = live.filter(featured=True).first() or live.first()
-    rest = live.exclude(pk=lead.pk) if lead else live
-    top_stories = list(rest[:2])
-    latest = list(rest[2:7])
-    stories = list(rest[7:13])
+    lead = live.filter(featured=True).order_by('-homepage_rank','-published_at').first() or live.first()
+    ranked_rest = live.exclude(pk=lead.pk).order_by('-homepage_rank','-published_at') if lead else live.order_by('-homepage_rank','-published_at')
+    top_stories = list(ranked_rest[:2])
+    shown_ids = [item.pk for item in ([lead] if lead else []) + top_stories]
+    latest = list(live.exclude(pk__in=shown_ids).order_by('-published_at')[:5])
+    shown_ids.extend(item.pk for item in latest)
+    stories = list(ranked_rest.exclude(pk__in=shown_ids)[:6])
     already_shown = [item.pk for item in ([lead] if lead else []) + top_stories + latest + stories]
+    popular_rows = list(ArticleDailyView.objects.filter(viewed_on__gte=timezone.localdate()-timedelta(days=6),viewed_on__lte=timezone.localdate()).values('article_id').annotate(total=Sum('view_count')).order_by('-total')[:20])
+    popular_ids = [row['article_id'] for row in popular_rows]
+    popular_articles = {item.pk:item for item in live.filter(pk__in=popular_ids).exclude(pk__in=already_shown)}
+    most_read = [{'article':popular_articles[row['article_id']],'views':row['total']} for row in popular_rows if row['article_id'] in popular_articles][:4]
     logo_url = settings.SITE_URL + settings.STATIC_URL + 'cedarmond-mark.svg'
     publisher = organization_schema(logo_url)
     website_schema = {
@@ -87,7 +94,8 @@ def home(request):
         'top_stories': top_stories,
         'latest': latest,
         'stories': stories,
-        'picks': list(live.filter(editors_pick=True).exclude(pk__in=already_shown)[:3]),
+        'picks': list(live.filter(editors_pick=True).exclude(pk__in=already_shown).order_by('-homepage_rank','-published_at')[:3]),
+        'most_read': most_read,
         'has_supporting_stories': bool(top_stories or latest),
         'seo_title': 'Cedarmond TV | Kenyan News, Politics, Business & Culture',
         'seo_description': 'Independent journalism and original reporting from Kenya. Read the latest news, politics, business, county, culture and sports coverage.',
