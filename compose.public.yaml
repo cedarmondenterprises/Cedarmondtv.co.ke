@@ -1,0 +1,8 @@
+# Public AWS preview: explicit external resolvers for Caddy certificate issuance.
+# Keep Docker's service-name resolution via the internal bridge DNS.
+# Base compose.yaml already publishes 80/tcp, 443/tcp and 443/udp.
+services:
+  caddy:
+    dns:
+      - 169.254.169.253
+      - 1.1.1.1
