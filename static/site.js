@@ -15,4 +15,12 @@
   }
   const progress = document.querySelector('.reading-progress');
   if (progress) { const update = () => { const total = document.documentElement.scrollHeight - innerHeight; progress.style.width = (total > 0 ? Math.min(100, scrollY / total * 100) : 100) + '%'; }; addEventListener('scroll', update, {passive:true}); update(); }
+  const ticker = document.querySelector('.breaking-ticker');
+  const tickerToggle = ticker?.querySelector('.ticker-toggle');
+  tickerToggle?.addEventListener('click', () => {
+    const paused = ticker.classList.toggle('is-paused');
+    tickerToggle.setAttribute('aria-pressed', String(paused));
+    tickerToggle.setAttribute('aria-label', paused ? 'Resume breaking news animation' : 'Pause breaking news animation');
+    tickerToggle.textContent = paused ? 'Resume' : 'Pause';
+  });
 })();

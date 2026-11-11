@@ -8,7 +8,7 @@ from .editor import EXTENSIONS, sanitize_html
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils import timezone
-from django.core.validators import FileExtensionValidator
+from django.core.validators import FileExtensionValidator, MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 
 def image_size(value):
@@ -126,6 +126,30 @@ class AdPlacement(models.Model):
     destination = models.URLField()
     active = models.BooleanField(default=True)
     def __str__(self): return self.label
+
+
+class BreakingNewsTicker(models.Model):
+    message = models.CharField(max_length=240, help_text='Short, verified text shown in the scrolling breaking-news strip.')
+    link = models.URLField(blank=True, help_text='Optional destination, such as the full article URL.')
+    active = models.BooleanField(default=True, help_text='Turn off to hide this message without deleting it.')
+    starts_at = models.DateTimeField(default=timezone.now, help_text='The message becomes visible at this time (Nairobi time in the admin).')
+    ends_at = models.DateTimeField(help_text='The message stops appearing at this time (Nairobi time in the admin).')
+    scroll_seconds = models.PositiveSmallIntegerField(default=32, validators=[MinValueValidator(10), MaxValueValidator(90)], help_text='Seconds for one pass across the screen. Choose 10–90 seconds.')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-starts_at', '-pk']
+        indexes = [models.Index(fields=['active', 'starts_at', 'ends_at'])]
+        verbose_name = 'breaking-news ticker message'
+        verbose_name_plural = 'breaking-news ticker messages'
+
+    def __str__(self): return self.message
+
+    def clean(self):
+        super().clean()
+        if self.starts_at and self.ends_at and self.ends_at <= self.starts_at:
+            raise ValidationError({'ends_at': 'End time must be later than start time.'})
 
 
 class Page(models.Model):

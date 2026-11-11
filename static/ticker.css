@@ -1,0 +1,15 @@
+.breaking-ticker{background:#17191d;color:#fff;border-bottom:3px solid #ba122b}
+.ticker-shell{min-height:48px;display:flex;align-items:center;gap:18px}
+.ticker-label{display:flex;align-items:center;gap:9px;flex:0 0 auto;padding:0 17px 0 0;color:#fff;font:700 10px/1 Arial,Helvetica,sans-serif;letter-spacing:1.05px}
+.ticker-label i{display:block;width:8px;height:8px;background:#e3213e;border-radius:50%;box-shadow:0 0 0 4px rgba(227,33,62,.16);animation:ticker-pulse 1.6s ease-in-out infinite}
+.ticker-window{min-width:0;flex:1;overflow:hidden;white-space:nowrap}
+.ticker-track{width:max-content;max-width:none;animation:ticker-scroll var(--ticker-duration,32s) linear infinite;will-change:transform;font-size:12px;font-weight:600;letter-spacing:.1px}
+.ticker-track a,.ticker-track span{display:inline-block;padding:14px 0;color:#f4f2f0}
+.ticker-track a:hover{color:#fff;text-decoration:underline;text-decoration-color:#e3213e;text-underline-offset:4px}
+.ticker-toggle{flex:0 0 auto;border:1px solid #66676a;background:transparent;color:#fff;min-width:58px;padding:7px 9px;font-size:10px;font-weight:bold;letter-spacing:.2px}
+.ticker-toggle:hover{background:#303136}
+.breaking-ticker.is-paused .ticker-track,.breaking-ticker:hover .ticker-track,.breaking-ticker:focus-within .ticker-track{animation-play-state:paused}
+@keyframes ticker-scroll{from{transform:translateX(100%)}to{transform:translateX(-100%)}}
+@keyframes ticker-pulse{50%{box-shadow:0 0 0 6px rgba(227,33,62,.06);opacity:.72}}
+@media(max-width:650px){.ticker-shell{width:100%;min-height:43px;padding-left:12px;padding-right:12px;gap:10px}.ticker-label{gap:7px;padding-right:10px;font-size:9px;letter-spacing:.6px}.ticker-label i{width:7px;height:7px}.ticker-track{font-size:11px}.ticker-track a,.ticker-track span{padding:13px 0}.ticker-toggle{min-width:50px;padding:7px 6px;font-size:9px}}
+@media(prefers-reduced-motion:reduce){.ticker-track,.ticker-label i{animation:none}.ticker-window{overflow:visible;white-space:normal}.ticker-track{width:auto;max-width:100%;transform:none!important}.ticker-track a,.ticker-track span{padding:10px 0}.ticker-toggle{display:none}.ticker-shell{align-items:flex-start;padding-top:10px;padding-bottom:10px}.ticker-label{padding-top:2px}}

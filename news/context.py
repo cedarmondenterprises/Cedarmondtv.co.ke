@@ -1,15 +1,19 @@
 from django.conf import settings
 
-from .models import AdPlacement, Article, Category, Page
+from .models import AdPlacement, Article, BreakingNewsTicker, Category, Page
+from django.utils import timezone
 
 
 def site(request):
     pages = list(Page.objects.filter(published=True).defer('body'))
     pages_by_slug = {page.slug: page for page in pages}
     ads = {item.position: item for item in AdPlacement.objects.filter(active=True)}
+    current_time = timezone.now()
+    breaking_ticker = BreakingNewsTicker.objects.filter(active=True, starts_at__lte=current_time, ends_at__gt=current_time).first()
     return {
         'categories': Category.objects.all(),
         'breaking_story': Article.objects.live().filter(breaking=True).first(),
+        'breaking_ticker': breaking_ticker,
         'site_url': settings.SITE_URL,
         'canonical': settings.SITE_URL + request.path,
         'seo_title': 'Cedarmond TV | Kenya, in perspective.',

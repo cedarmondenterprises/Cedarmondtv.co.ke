@@ -4,7 +4,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.urls import path
 from simple_history.admin import SimpleHistoryAdmin
-from .models import Article, Category, Author, Tag, Subscription, ReaderMessage, AdPlacement, Page, Campaign, MediaAsset, DraftRecovery, StoryComment
+from .models import Article, Category, Author, Tag, Subscription, ReaderMessage, AdPlacement, BreakingNewsTicker, Page, Campaign, MediaAsset, DraftRecovery, StoryComment
 from .newsletter import queue_campaign
 admin.site.site_header = 'Cedarmond TV · Newsroom'
 admin.site.site_title = 'Cedarmond TV Newsroom'
@@ -189,6 +189,15 @@ class AdPlacementAdmin(admin.ModelAdmin):
         if not obj or not obj.image: return 'Upload a banner image to preview it.'
         from django.utils.html import format_html
         return format_html('<img src="{}" alt="{}" style="max-width:520px;max-height:180px;width:auto;height:auto">',obj.image.url,obj.label)
+
+@admin.register(BreakingNewsTicker)
+class BreakingNewsTickerAdmin(admin.ModelAdmin):
+    list_display=['message','active','starts_at','ends_at','scroll_seconds']
+    list_filter=['active','starts_at','ends_at']
+    search_fields=['message']
+    ordering=['-starts_at','-pk']
+    readonly_fields=['created_at','updated_at']
+    fieldsets=[('Ticker message',{'fields':['message','link']}),('Display schedule',{'fields':['active','starts_at','ends_at'],'description':'Use Nairobi time. The message appears only between its start and end times. Disable Active to hide it immediately.'}),('Animation',{'fields':['scroll_seconds'],'description':'Controls the time taken for one complete pass across the ticker. Readers can pause the animation.'}),('Record',{'fields':['created_at','updated_at'],'classes':['collapse']})]
 
 @admin.register(StoryComment)
 class StoryCommentAdmin(admin.ModelAdmin):
