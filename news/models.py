@@ -71,6 +71,13 @@ class Article(models.Model):
         ordering = ['-published_at']
         indexes = [models.Index(fields=['status','published_at'])]
         permissions = [('publish_article','Can publish articles')]
+    dateline = models.CharField(max_length=100, blank=True)
+    swahili_headline = models.CharField(max_length=250, blank=True)
+    revised_at = models.DateTimeField(null=True, blank=True, help_text='Set for substantive editorial updates.')
+    correction = models.TextField(blank=True, help_text='Public note explaining what was corrected.')
+    corrected_at = models.DateTimeField(null=True, blank=True)
+    verification_notes = models.TextField(blank=True, help_text='Private source and fact-check notes.')
+
     def __str__(self): return self.title
     def get_absolute_url(self): return reverse('article',args=[self.slug])
     @property
@@ -201,6 +208,14 @@ class AdPlacement(models.Model):
     image = models.ImageField(upload_to='ads/',validators=[image_size,FileExtensionValidator(['jpg','jpeg','png','webp'])])
     destination = models.URLField()
     active = models.BooleanField(default=True)
+    starts_at = models.DateTimeField(null=True, blank=True)
+    ends_at = models.DateTimeField(null=True, blank=True)
+
+    def clean(self):
+        super().clean()
+        if self.starts_at and self.ends_at and self.ends_at <= self.starts_at:
+            raise ValidationError({'ends_at': 'End time must follow the start time.'})
+
     def __str__(self): return self.label
 
 

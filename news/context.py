@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.db.models import Q
 
 from .models import AdPlacement, AdSenseConfiguration, Article, BreakingNewsTicker, Category, Page
 from django.utils import timezone
@@ -7,8 +8,12 @@ from django.utils import timezone
 def site(request):
     pages = list(Page.objects.filter(published=True).defer('body'))
     pages_by_slug = {page.slug: page for page in pages}
-    ads = {item.position: item for item in AdPlacement.objects.filter(active=True)}
     current_time = timezone.now()
+    active_ads = AdPlacement.objects.filter(active=True).filter(
+        Q(starts_at__isnull=True) | Q(starts_at__lte=current_time),
+        Q(ends_at__isnull=True) | Q(ends_at__gt=current_time),
+    )
+    ads = {item.position: item for item in active_ads}
     breaking_ticker = BreakingNewsTicker.objects.filter(active=True, starts_at__lte=current_time, ends_at__gt=current_time).first()
     adsense_config = AdSenseConfiguration.objects.first()
     return {
