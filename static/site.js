@@ -1,4 +1,13 @@
 (() => {
+  document.querySelectorAll('img[data-image-fallback]').forEach((image) => {
+    const retry = () => {
+      image.removeEventListener('error', retry);
+      image.src = image.dataset.imageFallback;
+    };
+    image.addEventListener('error', retry);
+    if (image.complete && image.naturalWidth === 0) retry();
+  });
+
   const copy = document.querySelector('#copy-link');
   const status = document.querySelector('#share-status');
   copy?.addEventListener('click', async () => {

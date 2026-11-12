@@ -61,7 +61,7 @@ class ArticleAdmin(ReadOnlyHistoryAdmin):
         js = ('recovery.js',)
     list_select_related = ['category','author']
     actions = ['submit_for_review']
-    fieldsets = [('Story',{'fields':('title','slug','summary','body')}),('Attribution',{'fields':('author','category','tags','owner')}),('Photography',{'fields':('media_asset','image','image_alt','image_credit')}),('Assignment',{'fields':('deadline','assignment_notes'),'classes':('collapse',)}),('Publishing',{'fields':('status','published_at','homepage_rank','featured','breaking','editors_pick','preview_link')}),('Search appearance',{'fields':('seo_title','seo_description','updated_at'),'classes':('collapse',)})]
+    fieldsets = [('Story',{'fields':('title','slug','summary','body')}),('Attribution',{'fields':('author','category','tags','owner')}),('Photography',{'fields':('media_asset','image','image_alt','image_credit'),'description':'Select a Media asset or upload an Image here, then save the story. This photo appears on the homepage card and above the article. Uploading to the Media Library alone does not attach it to the story.'}),('Assignment',{'fields':('deadline','assignment_notes'),'classes':('collapse',)}),('Publishing',{'fields':('status','published_at','homepage_rank','featured','breaking','editors_pick','preview_link')}),('Google search metadata',{'fields':('seo_title','seo_description','updated_at'),'description':'Enter a search title and description for this story. Leave them blank to use the story headline and summary.'})]
     def get_form(self,request,obj=None,change=False,**kwargs):
         fields=kwargs.get('fields')
         if fields is None:

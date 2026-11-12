@@ -42,3 +42,21 @@
 .comment-consent label{font-weight:400;color:#555}
 .comment-form .errorlist{margin:0}
 @media(max-width:650px){.reader-comments{margin-top:32px;padding-top:22px}.comment-form{padding:15px}.comment-card{padding:13px}.comment-card header{align-items:flex-start;flex-direction:column;gap:3px}}
+
+.homepage-lead-card {
+  background: #fff;
+  border: 1px solid #e8e5e1;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.homepage-lead-card .lead-copy { padding: 18px; }
+.homepage-lead-card .lead-image > img { width: 100%; aspect-ratio: 16 / 9; }
+.latest .story-card { overflow: hidden; }
+.latest .story-card .card-image { margin: -14px -14px 12px; }
+.latest .story-card :is(.eyebrow, h3, .meta) { margin-inline: 0; }
+
+@media (max-width: 650px) {
+  .homepage-lead-card h2 { font-size: clamp(22px, 6vw, 29px); }
+  .homepage-lead-card .lead-copy { padding: 14px; }
+  .latest .story-card .card-image { margin: -13px -13px 10px; }
+}
