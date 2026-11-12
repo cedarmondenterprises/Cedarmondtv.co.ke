@@ -8,13 +8,16 @@
 <div class="breadcrumb"><a href="/">Home</a> / <a href="{{ article.category.get_absolute_url }}">{{ article.category.name }}</a></div>
 <article class="article-page">
   {% if preview %}<p class="notice">EDITORIAL PREVIEW · This view is private.</p>{% endif %}
-  <span class="eyebrow">{{ article.category.name }}</span><h1>{{ article.title }}</h1><p class="article-summary">{{ article.summary }}</p>
+  <span class="eyebrow">{{ article.category.name }}</span><h1>{{ article.title }}</h1>{% if article.swahili_headline %}<p lang="sw">{{ article.swahili_headline }}</p>{% endif %}<p class="article-summary">{{ article.summary }}</p>
   <div class="byline"><span class="avatar">{{ article.author.name|slice:':1' }}</span><div><a href="{{ article.author.get_absolute_url }}">{{ article.author.name }}</a><p class="meta">{{ article.published_at|date:'j F Y, H:i' }} EAT · {{ article.reading_minutes }} min read</p></div></div>
   {% if article.display_image %}<figure>{% include 'news/image.html' with item=article eager=True %}{% if article.display_credit %}<figcaption>{{ article.display_credit }}</figcaption>{% endif %}</figure>{% endif %}
   <div class="article-columns{% if not newsletter_enabled and not sidebar_ad %} article-columns-wide{% endif %}"><div class="article-main">
     <div class="share"><a href="https://wa.me/?text={{ share_text }}" rel="noopener" target="_blank">WhatsApp ↗</a><button id="copy-link" type="button">Copy link</button><button id="save-story" data-slug="{{ article.slug }}" type="button" aria-pressed="false">Save story</button><span id="share-status" role="status"></span></div>
     {% if not preview %}{% article_sharing canonical article.title %}{% endif %}
+    {% if article.dateline %}<p class="eyebrow">{{ article.dateline }}</p>{% endif %}
+    {% if article.revised_at %}<p class="meta">Updated <time datetime="{{ article.revised_at|date:'c' }}">{{ article.revised_at|date:'j F Y, H:i' }} EAT</time></p>{% endif %}
     <div class="prose">{{ article.rendered_body|safe }}</div>
+    {% if article.correction and article.corrected_at %}<aside class="notice"><strong>Correction · {{ article.corrected_at|date:'j F Y' }}</strong>{{ article.correction|linebreaks }}<a href="{% url 'corrections_log' %}">View the corrections log</a></aside>{% endif %}
     <div class="tags">{% for tag in article.tags.all %}<a href="{% url 'tag' tag.slug %}">{{ tag.name }}</a>{% endfor %}</div>
     <div class="author-box"><span class="eyebrow">ABOUT THE AUTHOR</span><h3><a href="{{ article.author.get_absolute_url }}">{{ article.author.name }}</a></h3><p>{{ article.author.bio }}</p></div>
     <p class="correction">Something we should correct? <a href="{% url 'contact' %}">Let our editors know.</a></p>

@@ -15,6 +15,7 @@ urlpatterns = [
     path('api/redoc/', SpectacularRedocView.as_view(url_name='api-schema'), name='api-redoc'),
     path('api/v1/', include('news.api_urls')),
     path('', views.home, name='home'),
+    path('corrections/', views.listing, {'kind': 'corrections'}, name='corrections_log'),
     path('latest/', views.listing, name='latest'),
     path('live/<slug:slug>/updates/', views.live_blog_updates, name='live_blog_updates'),
     path('live/<slug:slug>/', views.live_blog, name='live_blog'),

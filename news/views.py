@@ -108,7 +108,10 @@ def home(request):
 def listing(request,kind=None,slug=None):
     articles = Article.objects.live()
     title, description = 'Latest stories', 'The latest original reporting from the Cedarmond TV newsroom.'
-    if kind == 'category':
+    if kind == 'corrections':
+        articles = articles.filter(corrected_at__lte=timezone.now()).exclude(correction='').order_by('-corrected_at', '-pk')
+        title, description = 'Corrections log', 'Published stories with corrections from the Cedarmond TV newsroom.'
+    elif kind == 'category':
         obj = get_object_or_404(Category,slug=slug); articles = articles.filter(category=obj); title = obj.name
         description = f'Latest {obj.name.lower()} news and reporting from Cedarmond TV.'
     elif kind == 'author':
