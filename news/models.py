@@ -78,7 +78,7 @@ class Article(models.Model):
     @property
     def rendered_body(self): return sanitize_html(self.body)
     @property
-    def display_image(self): return self.image or (self.media_asset.image if self.media_asset_id else None)
+    def display_image(self): return self.image or ((self.media_asset.image or self.media_asset.thumbnail) if self.media_asset_id else None)
     @property
     def display_thumbnail(self): return self.thumbnail if self.image else (self.media_asset.thumbnail if self.media_asset_id else None)
     @property
