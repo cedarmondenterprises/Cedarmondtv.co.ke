@@ -1,6 +1,7 @@
 {% load static %}<!doctype html>
 <html lang="en">
 <head>
+{% if gtm_container_id and not preview %}{% include "news/gtm.html" %}{% endif %}
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{% block title %}{{ seo_title }}{% endblock %}</title>
@@ -27,6 +28,7 @@
 <link rel="stylesheet" href="{% static 'ticker.css' %}">
 <link rel="alternate" type="application/rss+xml" title="Cedarmond TV" href="{% url 'feed' %}">
 {% if adsense_config and adsense_config.active and adsense_config.publisher_id and request.path == '/' or adsense_config and adsense_config.active and adsense_config.publisher_id and request.path|slice:':7' == '/story/' %}<link rel="stylesheet" href="{% static 'adsense.css' %}"><script nonce="{{ request.csp_nonce }}" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_config.publisher_id }}" crossorigin="anonymous"></script><script nonce="{{ request.csp_nonce }}" defer src="{% static 'adsense.js' %}"></script>{% endif %}
+{% if request.resolver_match.url_name == 'category' %}<link rel="alternate" type="application/rss+xml" title="{{ title }} | Cedarmond TV" href="{% url 'category_feed' request.resolver_match.kwargs.slug %}">{% endif %}
 {% block meta %}{% endblock %}
 <script nonce="{{ request.csp_nonce }}" defer src="{% static 'site.js' %}"></script>
 </head>

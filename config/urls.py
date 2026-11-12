@@ -5,7 +5,7 @@ from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from news import views
-from news.feeds import ArticleSitemap, AuthorSitemap, CategorySitemap, LatestFeed, LiveBlogSitemap, PageSitemap, StaticSitemap, TagSitemap
+from news.feeds import ArticleSitemap, AuthorSitemap, CategoryFeed, CategorySitemap, LatestFeed, LiveBlogSitemap, PageSitemap, StaticSitemap, TagSitemap
 
 urlpatterns = [
     path('newsroom/preview/<int:pk>/', views.preview, name='preview'),
@@ -20,6 +20,7 @@ urlpatterns = [
     path('live/<slug:slug>/', views.live_blog, name='live_blog'),
     path('live/', views.live_blog_list, name='live_blogs'),
     path('search/', views.listing, name='search'),
+    path('category/<slug:slug>/feed.xml', CategoryFeed(), name='category_feed'),
     path('category/<slug:slug>/', views.listing, {'kind': 'category'}, name='category'),
     path('author/<slug:slug>/', views.listing, {'kind': 'author'}, name='author'),
     path('topic/<slug:slug>/', views.listing, {'kind': 'tag'}, name='tag'),

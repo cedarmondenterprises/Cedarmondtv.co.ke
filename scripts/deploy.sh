@@ -6,6 +6,7 @@ test -f .env || { printf 'Run python3 scripts/configure.py first.
 docker compose config --quiet
 docker compose up -d db redis
 docker compose build web mail
+docker compose run --rm web python manage.py makemigrations --check --dry-run
 docker compose run --rm web python manage.py migrate
 docker compose run --rm web python manage.py setup_newsroom
 docker compose run --rm web python manage.py check --deploy

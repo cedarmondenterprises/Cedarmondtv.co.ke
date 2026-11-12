@@ -1,0 +1,11 @@
+<script nonce="{{ request.csp_nonce }}">
+(() => {
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({'gtm.start': Date.now(), event: 'gtm.js'});
+  const script = document.createElement('script');
+  script.async = true;
+  script.nonce = document.currentScript.nonce;
+  script.src = 'https://www.googletagmanager.com/gtm.js?id={{ gtm_container_id|escapejs }}';
+  document.head.appendChild(script);
+})();
+</script>

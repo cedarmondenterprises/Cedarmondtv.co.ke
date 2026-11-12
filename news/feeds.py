@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.sitemaps import Sitemap
 from django.contrib.syndication.views import Feed
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
 from urllib.parse import urlsplit
@@ -30,6 +31,20 @@ class LatestFeed(Feed):
 
     def item_link(self, item):
         return settings.SITE_URL + item.get_absolute_url()
+
+
+class CategoryFeed(LatestFeed):
+    def get_object(self, request, slug):
+        return get_object_or_404(Category, slug=slug)
+
+    def title(self, category):
+        return f'{category.name} | Cedarmond TV'
+
+    def link(self, category):
+        return settings.SITE_URL + category.get_absolute_url()
+
+    def items(self, category):
+        return Article.objects.live().filter(category=category)[:30]
 
 
 class CanonicalSitemap(Sitemap):
