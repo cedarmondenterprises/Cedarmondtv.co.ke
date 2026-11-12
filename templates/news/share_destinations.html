@@ -1,0 +1,8 @@
+<details class="share-destinations">
+  <summary>More ways to share</summary>
+  <ul>
+    {% for label, url in destinations %}
+      <li><a href="{{ url }}">{{ label }}</a></li>
+    {% endfor %}
+  </ul>
+</details>
