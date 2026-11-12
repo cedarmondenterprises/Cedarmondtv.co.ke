@@ -1,0 +1,5 @@
+.share-destinations ul{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0;margin:12px 0}
+.share-destinations summary{cursor:pointer}
+.share-destinations a,.share a{display:inline-flex;align-items:center;gap:8px}
+.share-destinations a{min-height:44px;padding:6px 10px;border:1px solid var(--line);border-radius:5px}
+.share-destinations img,.share .share-icon{width:18px;height:18px;flex:none}
