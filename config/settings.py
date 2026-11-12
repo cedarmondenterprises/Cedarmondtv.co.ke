@@ -98,3 +98,16 @@ if not DEBUG:
         raise ImproperlyConfigured('Production SITE_URL must use HTTPS.')
     if NEWSLETTER_ENABLED and (not EMAIL_HOST or EMAIL_BACKEND != 'django.core.mail.backends.smtp.EmailBackend'):
         raise ImproperlyConfigured('Newsletter requires an SMTP host and SMTP backend.')
+
+SENTRY_DSN = os.getenv('SENTRY_DSN', '').strip()
+if SENTRY_DSN and not DEBUG:
+    import sentry_sdk
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        environment=os.getenv('SENTRY_ENVIRONMENT', 'production'),
+        send_default_pii=False,
+        max_request_body_size='never',
+        traces_sample_rate=0.0,
+        include_local_variables=False,
+    )
