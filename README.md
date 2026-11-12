@@ -141,3 +141,19 @@ Backups must be copied off the VM, scheduled by the operator and restore-tested.
 Back up first. Migration 0002 deletes only articles explicitly marked as generated demos, removes unused generated author/tag records, converts existing plain-text articles safely to HTML, and adds revision/campaign data. Real articles are retained. Existing uploaded files are not deleted automatically; remove unused demo files separately only after reviewing media references. Existing subscriptions remain, but old confirmation links are invalidated by the versioned token format.
 
 Run `python manage.py migrate` after updating to apply migration 0003. It adds assignment metadata, the media library, private editorial comments, draft recovery and permanent article-URL history. Existing article slugs are registered automatically, so their addresses keep working after an edit.
+
+### Error monitoring and off-server backups
+
+To enable Sentry, add your Django project's DSN as `SENTRY_DSN` in the VM's
+deployment `.env` and redeploy. Reporting is disabled in debug mode. Request
+bodies, stack-frame locals and default personal data collection are disabled.
+Review event scrubbing in your Sentry project before sending production events.
+
+Install Restic on the VM and configure an off-server repository and credentials
+in a restricted environment file. Initialize the repository once with
+`restic init`. Load that environment before running `scripts/backup.sh` with
+the same Compose project name and files used for deployment. Schedule the script
+using your existing cron or systemd setup once the first upload succeeds.
+A failed upload leaves the completed local backup available for retry.
+Store the repository password separately and confirm recovery into an isolated
+directory with `restic restore latest --tag cedarmondtv --target <restore-directory>`.
