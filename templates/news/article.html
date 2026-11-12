@@ -17,7 +17,7 @@
     {% if article.dateline %}<p class="eyebrow">{{ article.dateline }}</p>{% endif %}
     {% if article.revised_at %}<p class="meta">Updated <time datetime="{{ article.revised_at|date:'c' }}">{{ article.revised_at|date:'j F Y, H:i' }} EAT</time></p>{% endif %}
     <div class="prose">{{ article.rendered_body|safe }}</div>
-    {% if article.correction and article.corrected_at %}<aside class="notice"><strong>Correction · {{ article.corrected_at|date:'j F Y' }}</strong>{{ article.correction|linebreaks }}<a href="{% url 'corrections_log' %}">View the corrections log</a></aside>{% endif %}
+    {% if show_correction %}<aside class="notice"><strong>Correction · {{ article.corrected_at|date:'j F Y' }}</strong>{{ article.correction|linebreaks }}<a href="{% url 'corrections_log' %}">View the corrections log</a></aside>{% endif %}
     <div class="tags">{% for tag in article.tags.all %}<a href="{% url 'tag' tag.slug %}">{{ tag.name }}</a>{% endfor %}</div>
     <div class="author-box"><span class="eyebrow">ABOUT THE AUTHOR</span><h3><a href="{{ article.author.get_absolute_url }}">{{ article.author.name }}</a></h3><p>{{ article.author.bio }}</p></div>
     <p class="correction">Something we should correct? <a href="{% url 'contact' %}">Let our editors know.</a></p>

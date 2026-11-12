@@ -1,8 +1,14 @@
 (() => {
-  document.querySelectorAll('img[data-image-fallback]').forEach((image) => {
+  document.querySelectorAll('img[data-story-image]').forEach((image) => {
     const retry = () => {
-      image.removeEventListener('error', retry);
-      image.src = image.dataset.imageFallback;
+      const fallback = image.dataset.imageFallback;
+      if (fallback) {
+        delete image.dataset.imageFallback;
+        image.src = fallback;
+        return;
+      }
+      const frame = image.closest('.card-image, .lead-image, figure');
+      (frame || image).remove();
     };
     image.addEventListener('error', retry);
     if (image.complete && image.naturalWidth === 0) retry();

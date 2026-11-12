@@ -262,6 +262,7 @@ def render_article(request,item,preview=False,comment_form=None,status=200):
     }
     context = {
         'article': item,
+        'show_correction': bool(item.correction and item.corrected_at and item.corrected_at <= timezone.now()),
         'preview': preview,
         'related': Article.objects.live().filter(category=item.category).exclude(pk=item.pk)[:3],
         'reader_comments': item.reader_comments.filter(status=StoryComment.APPROVED)[:50],
