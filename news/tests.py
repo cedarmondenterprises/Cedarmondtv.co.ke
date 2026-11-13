@@ -169,6 +169,13 @@ class NewsroomTests(TestCase):
             self.assertEqual(self.client.get(self.article.get_absolute_url()).status_code,404)
             for url in ['/','/search/?q=verified','/feed.xml','/sitemap.xml','/category/kenya/','/author/news-desk/']:
                 self.assertNotContains(self.client.get(url),'A verified story')
+    def test_empty_search_shows_the_search_form_without_latest_stories(self):
+        response = self.client.get('/search/?q=%20')
+        self.assertContains(response, '<h1>Search stories</h1>')
+        self.assertContains(response, 'name="q"')
+        self.assertNotContains(response, 'A verified story')
+        self.assertNotContains(response, 'No stories found')
+
     def test_search_filters_and_pagination(self):
         self.assertContains(self.client.get('/search/?q=verified'),'A verified story')
         self.assertNotContains(self.client.get('/search/?q=unmatched'),'A verified story')
@@ -267,6 +274,9 @@ class NewsroomTests(TestCase):
         self.article.owner=other; self.article.status='draft'; self.article.save()
         self.client.force_login(user)
         self.assertNotContains(self.client.get('/admin/news/article/'),'A verified story')
+        dashboard = self.client.get('/admin/')
+        self.assertNotContains(dashboard, 'A verified story')
+        self.assertEqual(dashboard.context['dashboard_drafts'], 0)
         self.assertEqual(self.client.get(f'/newsroom/preview/{self.article.pk}/').status_code,404)
         self.article.owner=user; self.article.save()
         response=self.client.get(f'/newsroom/preview/{self.article.pk}/')
@@ -352,8 +362,9 @@ class NewsroomTests(TestCase):
     @override_settings(RATELIMIT_ENABLE=True)
     def test_rate_limit_survives_new_cookies(self):
         cache.clear()
-        data={'name':'Reader','email':'reader@example.com','subject':'Hello','message':'Hello.'}
+        data={'name':'Reader','email':'reader@example.com','subject':'General enquiry','message':'Hello.'}
         for _ in range(10): Client().post('/contact/',data)
+        self.assertEqual(ReaderMessage.objects.count(),10)
         response=Client().post('/contact/',data)
         self.assertContains(response,'Please wait')
         self.assertEqual(ReaderMessage.objects.count(),10)

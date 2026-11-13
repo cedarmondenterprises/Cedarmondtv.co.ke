@@ -120,13 +120,19 @@ def listing(request,kind=None,slug=None):
     elif kind == 'tag':
         obj = get_object_or_404(Tag,slug=slug); articles = articles.filter(tags=obj); title = obj.name
         description = f'Latest stories about {obj.name} from Cedarmond TV.'
+    is_search = request.resolver_match.url_name == 'search'
     query = request.GET.get('q','').strip()[:120]
+    if is_search:
+        title = 'Search stories'
+        description = 'Search Cedarmond TV by keyword, author or topic.'
+        if not query:
+            articles = articles.none()
     if query:
         articles = articles.filter(Q(title__icontains=query)|Q(summary__icontains=query)|Q(body__icontains=query)|Q(author__name__icontains=query)|Q(category__name__icontains=query)|Q(tags__name__icontains=query)).distinct(); title = 'Search results'
     page=Paginator(articles,9).get_page(request.GET.get('page'))
     pagination_params=request.GET.copy()
     pagination_params.pop('page',None)
-    noindex = bool(query) or request.resolver_match.url_name == 'search'
+    noindex = bool(query) or is_search
     canonical = settings.SITE_URL + request.path
     if page.number > 1 and not noindex:
         canonical += f'?page={page.number}'
@@ -137,6 +143,7 @@ def listing(request,kind=None,slug=None):
         'description': description,
         'query': query,
         'pagination_query': pagination_params.urlencode(),
+        'is_search': is_search,
         'noindex': noindex,
         'canonical': canonical,
         'seo_title': branded_title(title),
@@ -176,7 +183,10 @@ def live_blog(request,slug):
         'headline':item.title,
         'articleBody':Truncator(strip_tags(update.content)).chars(500),
         'datePublished':update.created_at.isoformat(),
-        'author':{'@type':'Person','name':update.created_by.get_full_name() or update.created_by.username} if update.created_by else {'@type':'Organization','name':'Cedarmond TV newsroom'},
+        'author':{
+            '@type': 'Organization' if update.public_byline == 'Cedarmond TV newsroom' else 'Person',
+            'name': update.public_byline,
+        },
     } for update in reversed(updates)]
     schema={
         '@context':'https://schema.org',
@@ -219,7 +229,7 @@ def live_blog_updates(request,slug):
         'content':update.rendered_content,
         'published_at':timezone.localtime(update.created_at).isoformat(),
         'display_time':timezone.localtime(update.created_at).strftime('%H:%M EAT'),
-        'author':(update.created_by.get_full_name() or update.created_by.username) if update.created_by else 'Cedarmond TV newsroom',
+        'author':update.public_byline,
         'pinned':update.pinned,
     } for update in updates]
     return JsonResponse({'updates':payload,'status':blog.status})
@@ -393,6 +403,10 @@ def page(request,slug):
 @login_required
 @never_cache
 def preview(request,pk):
+    if settings.NEWSROOM_2FA_REQUIRED and not request.user.is_verified():
+        from django.contrib.auth.views import redirect_to_login
+
+        return redirect_to_login(request.get_full_path())
     item=get_object_or_404(Article,pk=pk)
     if not request.user.is_staff or not request.user.has_perm('news.view_article'):
         raise Http404
