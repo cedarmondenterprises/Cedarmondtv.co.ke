@@ -183,7 +183,10 @@ def live_blog(request,slug):
         'headline':item.title,
         'articleBody':Truncator(strip_tags(update.content)).chars(500),
         'datePublished':update.created_at.isoformat(),
-        'author':{'@type':'Person','name':update.created_by.get_full_name() or update.created_by.username} if update.created_by else {'@type':'Organization','name':'Cedarmond TV newsroom'},
+        'author':{
+            '@type': 'Organization' if update.public_byline == 'Cedarmond TV newsroom' else 'Person',
+            'name': update.public_byline,
+        },
     } for update in reversed(updates)]
     schema={
         '@context':'https://schema.org',
@@ -226,7 +229,7 @@ def live_blog_updates(request,slug):
         'content':update.rendered_content,
         'published_at':timezone.localtime(update.created_at).isoformat(),
         'display_time':timezone.localtime(update.created_at).strftime('%H:%M EAT'),
-        'author':(update.created_by.get_full_name() or update.created_by.username) if update.created_by else 'Cedarmond TV newsroom',
+        'author':update.public_byline,
         'pinned':update.pinned,
     } for update in updates]
     return JsonResponse({'updates':payload,'status':blog.status})
