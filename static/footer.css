@@ -18,8 +18,7 @@
   padding: 18px 0 12px;
   border-bottom: 1px solid #393a3e;
 }
-.site-footer .footer-mark { display: inline-block; color: #fff; font-size: 25px; letter-spacing: -1px; }
-.footer-mark > span { font-size: 15px; vertical-align: 2px; }
+.site-footer .footer-mark { justify-content: flex-start; color: #fff; font-size: 25px; letter-spacing: -1px; }
 .footer-brand-row p { margin: 6px 0 0; color: #c3c2bf; font-size: 12px; }
 .footer-follow, .footer-bottom nav { display: flex; flex-wrap: wrap; gap: 0 16px; }
 .footer-follow a, .footer-bottom a {
