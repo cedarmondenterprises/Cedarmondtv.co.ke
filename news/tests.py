@@ -169,6 +169,13 @@ class NewsroomTests(TestCase):
             self.assertEqual(self.client.get(self.article.get_absolute_url()).status_code,404)
             for url in ['/','/search/?q=verified','/feed.xml','/sitemap.xml','/category/kenya/','/author/news-desk/']:
                 self.assertNotContains(self.client.get(url),'A verified story')
+    def test_empty_search_shows_the_search_form_without_latest_stories(self):
+        response = self.client.get('/search/?q=%20')
+        self.assertContains(response, '<h1>Search stories</h1>')
+        self.assertContains(response, 'name="q"')
+        self.assertNotContains(response, 'A verified story')
+        self.assertNotContains(response, 'No stories found')
+
     def test_search_filters_and_pagination(self):
         self.assertContains(self.client.get('/search/?q=verified'),'A verified story')
         self.assertNotContains(self.client.get('/search/?q=unmatched'),'A verified story')
