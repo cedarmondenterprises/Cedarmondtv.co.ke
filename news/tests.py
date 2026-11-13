@@ -274,6 +274,9 @@ class NewsroomTests(TestCase):
         self.article.owner=other; self.article.status='draft'; self.article.save()
         self.client.force_login(user)
         self.assertNotContains(self.client.get('/admin/news/article/'),'A verified story')
+        dashboard = self.client.get('/admin/')
+        self.assertNotContains(dashboard, 'A verified story')
+        self.assertEqual(dashboard.context['dashboard_drafts'], 0)
         self.assertEqual(self.client.get(f'/newsroom/preview/{self.article.pk}/').status_code,404)
         self.article.owner=user; self.article.save()
         response=self.client.get(f'/newsroom/preview/{self.article.pk}/')
@@ -359,8 +362,9 @@ class NewsroomTests(TestCase):
     @override_settings(RATELIMIT_ENABLE=True)
     def test_rate_limit_survives_new_cookies(self):
         cache.clear()
-        data={'name':'Reader','email':'reader@example.com','subject':'Hello','message':'Hello.'}
+        data={'name':'Reader','email':'reader@example.com','subject':'General enquiry','message':'Hello.'}
         for _ in range(10): Client().post('/contact/',data)
+        self.assertEqual(ReaderMessage.objects.count(),10)
         response=Client().post('/contact/',data)
         self.assertContains(response,'Please wait')
         self.assertEqual(ReaderMessage.objects.count(),10)
