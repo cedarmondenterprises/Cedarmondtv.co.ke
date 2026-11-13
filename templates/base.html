@@ -38,4 +38,53 @@
 {% for message in messages %}<div role="status" class="wrap notice">{{ message }}</div>{% endfor %}
 <main id="content" class="wrap">{% block content %}{% endblock %}</main>
 {% if newsletter_enabled %}<section class="newsletter-band"><div class="wrap"><div><span class="eyebrow">THE CEDARMOND BRIEFING</span><h2>Make sense of what matters.</h2><p>Essential stories. Thoughtful context. Delivered to your inbox.</p></div><a class="button white" href="{% url 'newsletter' %}">Join the briefing <span>→</span></a></div></section>{% endif %}
-<footer class="site-footer"><div class="wrap"><div class="footer-brand-row"><div><a class="wordmark footer-mark" href="/" aria-label="Cedarmond TV home">CEDARMOND<span>TV</span></a><p>Independent journalism. A wider perspective.</p></div><a class="footer-rss" href="{% url 'feed' %}">Follow our reporting <span>RSS&nbsp; ↗</span></a></div><div class="footer-columns"><section><h2>Explore</h2><a href="{% url 'home' %}">Home</a><a href="{% url 'latest' %}">Latest stories</a><a href="{% url 'search' %}">Search</a>{% if newsletter_enabled %}<a href="{% url 'newsletter' %}">The Cedarmond Briefing</a>{% endif %}</section><section><h2>The newsroom</h2>{% if about_page %}<a href="{{ about_page.get_absolute_url }}">About Cedarmond TV</a>{% endif %}{% if editorial_page %}<a href="{{ editorial_page.get_absolute_url }}">Editorial standards</a>{% endif %}{% if corrections_page %}<a href="{{ corrections_page.get_absolute_url }}">Corrections & complaints</a>{% endif %}{% if advertising_page %}<a href="{{ advertising_page.get_absolute_url }}">Advertising & sponsorship</a>{% endif %}<a href="{% url 'contact' %}">Contact</a></section><section><h2>Policies</h2>{% if privacy_page %}<a href="{{ privacy_page.get_absolute_url }}">Privacy & data</a>{% endif %}{% if cookies_page %}<a href="{{ cookies_page.get_absolute_url }}">Cookies</a>{% endif %}{% if terms_page %}<a href="{{ terms_page.get_absolute_url }}">Terms of use</a>{% endif %}</section><section class="footer-sections"><h2>Sections</h2>{% for category in categories %}<a href="{{ category.get_absolute_url }}">{{ category.name }}</a>{% endfor %}</section>{% social_channels %}</div><div class="copyright"><span>© {% now 'Y' %} Cedarmond TV. All rights reserved.</span><span>CEDARMONDTV.CO.KE</span></div></div></footer></body></html>
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-brand-row">
+      <div>
+        <a class="wordmark footer-mark" href="{% url 'home' %}" aria-label="Cedarmond TV home">CEDARMOND<span>TV</span></a>
+        <p>Independent journalism. A wider perspective.</p>
+      </div>
+      <nav class="footer-follow" aria-label="Follow Cedarmond TV">
+        <a class="footer-rss" href="{% url 'feed' %}">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1" fill="currentColor"/></svg>
+          RSS
+        </a>
+        {% social_channels %}
+      </nav>
+    </div>
+    <div class="footer-columns">
+      <nav aria-labelledby="footer-explore">
+        <h2 id="footer-explore">Explore</h2>
+        <div class="footer-links footer-explore">
+          <a href="{% url 'latest' %}">Latest stories</a>
+          <a href="{% url 'search' %}">Search</a>
+          {% if newsletter_enabled %}<a href="{% url 'newsletter' %}">The Cedarmond Briefing</a>{% endif %}
+          {% for category in categories %}<a href="{{ category.get_absolute_url }}">{{ category.name }}</a>{% endfor %}
+        </div>
+      </nav>
+      <nav aria-labelledby="footer-newsroom">
+        <h2 id="footer-newsroom">The newsroom</h2>
+        <div class="footer-links">
+          <a href="{% url 'contact' %}">Contact</a>
+          {% if corrections_page %}<a href="{{ corrections_page.get_absolute_url }}">Corrections &amp; complaints</a>{% endif %}
+          {% if about_page %}<a href="{{ about_page.get_absolute_url }}">About Cedarmond TV</a>{% endif %}
+          {% if editorial_page %}<a href="{{ editorial_page.get_absolute_url }}">Editorial standards</a>{% endif %}
+          {% if advertising_page %}<a href="{{ advertising_page.get_absolute_url }}">Advertising &amp; sponsorship</a>{% endif %}
+        </div>
+      </nav>
+    </div>
+    <div class="footer-bottom">
+      {% if privacy_page or cookies_page or terms_page %}
+        <nav aria-label="Site policies">
+          {% if privacy_page %}<a href="{{ privacy_page.get_absolute_url }}">Privacy &amp; data</a>{% endif %}
+          {% if cookies_page %}<a href="{{ cookies_page.get_absolute_url }}">Cookies</a>{% endif %}
+          {% if terms_page %}<a href="{{ terms_page.get_absolute_url }}">Terms of use</a>{% endif %}
+        </nav>
+      {% endif %}
+      <small>© {% now 'Y' %} Cedarmond TV. All rights reserved.</small>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
