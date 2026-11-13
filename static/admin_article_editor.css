@@ -1,47 +1,120 @@
-body.app-news.model-article.change-form {
-  --header-bg: var(--darkened-bg);
-  --header-color: var(--body-fg);
-  --header-branding-color: var(--body-fg);
-  --header-link-color: var(--link-fg);
-  --breadcrumbs-bg: var(--darkened-bg);
-  --breadcrumbs-fg: var(--body-quiet-color);
-  --breadcrumbs-link-fg: var(--link-fg);
+/* The article editor uses one light palette, including on dark-mode devices. */
+html:root body.app-news.model-article.change-form {
+  color-scheme: light;
+  --body-bg: #fff;
+  --body-fg: #231f20;
+  --body-quiet-color: #594f52;
+  --body-loud-color: #231f20;
+  --darkened-bg: #fff;
+  --selected-bg: #fceef1;
+  --selected-row: #fceef1;
+  --border-color: #9b747c;
+  --hairline-color: #ead7db;
+  --primary: #b40e2e;
+  --secondary: #8e1030;
+  --accent: #fff;
+  --header-bg: #b40e2e;
+  --header-color: #fff;
+  --header-branding-color: #fff;
+  --header-link-color: #fff;
+  --breadcrumbs-bg: #fff4f6;
+  --breadcrumbs-fg: #594f52;
+  --breadcrumbs-link-fg: #85122f;
+  --link-fg: #b40e2e;
+  --link-hover-color: #751026;
+  --link-selected-fg: #751026;
+  --button-bg: #a41331;
+  --button-hover-bg: #751026;
+  --default-button-bg: #b40e2e;
+  --default-button-hover-bg: #751026;
+  --object-tools-bg: #a41331;
+  --object-tools-hover-bg: #751026;
+  --error-fg: #a01828;
+  --message-success-bg: #e6f4ea;
+  --message-warning-bg: #fff3d7;
+  --message-error-bg: #fde8ea;
+  font-family: Inter, system-ui, sans-serif;
 }
-.app-news.model-article.change-form fieldset {
+.app-news.model-article.change-form #header {
+  border-bottom: 1px solid var(--hairline-color);
+  gap: 10px;
+}
+.app-news.model-article.change-form #site-name { font-size: 19px; font-weight: 700; }
+.app-news.model-article.change-form #content {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1060px;
+  margin-inline: auto;
+  padding: clamp(16px, 4vw, 44px);
+}
+.app-news.model-article.change-form #content > h1 {
+  font-size: clamp(25px, 4vw, 36px);
+  line-height: 1.15;
+  font-weight: 700;
+  color: var(--body-fg);
+  margin: 0 0 18px;
+}
+.app-news.model-article.change-form #content > h2 { overflow-wrap: anywhere; }
+.app-news.model-article.change-form form > div > fieldset {
+  box-sizing: border-box;
+  min-width: 0;
+  background: #fff;
   border: 1px solid var(--hairline-color);
-  border-radius: 8px;
+  border-radius: 12px;
   margin-bottom: 16px;
 }
-.app-news.model-article.change-form fieldset h2 {
-  background: var(--darkened-bg);
-  color: var(--body-fg);
-  font-weight: 600;
+.app-news.model-article.change-form fieldset.module > h2,
+.app-news.model-article.change-form fieldset.module > details > summary {
+  background: #fff4f6;
+  border-radius: 12px;
+  color: var(--link-fg);
+  font-size: 15px;
+  font-weight: 700;
+  padding: 14px 18px;
 }
+.app-news.model-article.change-form fieldset details > summary { cursor: pointer; }
+.app-news.model-article.change-form .form-row { padding: 15px 18px; }
+.app-news.model-article.change-form .field-body .flex-container,
+.app-news.model-article.change-form .field-title .flex-container {
+  flex-direction: column;
+  align-items: stretch;
+}
+.app-news.model-article.change-form .field-title input {
+  box-sizing: border-box;
+  width: 100%;
+  font-weight: 650;
+  font-size: 18px;
+}
+.app-news.model-article.change-form .field-body .tiptap { min-height: 15rem; }
+.app-news.model-article.change-form .field-summary textarea { min-height: 5rem; height: 5rem; }
 .app-news.model-article.change-form #draft-recovery {
+  background: #fff;
   padding: 10px 14px;
   border: 1px solid var(--hairline-color);
-  border-radius: 8px;
+  border-radius: 10px;
+  margin-bottom: 18px;
 }
 .app-news.model-article.change-form #draft-recovery p { margin: 4px 0; }
-.app-news.model-article.change-form .field-summary textarea { min-height: 5rem; height: 5rem; }
+.app-news.model-article.change-form :focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+.app-news.model-article.change-form .submit-row {
+  border: 1px solid var(--hairline-color);
+  border-radius: 12px;
+  background: #fff;
+}
+.app-news.model-article.change-form .submit-row input { min-height: 44px; }
 @media (max-width: 767px) {
-  .app-news.model-article.change-form #header { padding: 10px 16px; gap: 6px; }
-  .app-news.model-article.change-form #site-name { font-size: 19px; margin: 0; }
-  .app-news.model-article.change-form #user-tools { font-size: 11px; line-height: 1.6; padding: 0; margin: 0; }
-  .app-news.model-article.change-form #content { padding: 16px; }
-  .app-news.model-article.change-form .form-row { padding: 12px; }
+  .app-news.model-article.change-form #header { padding: 12px 16px; }
+  .app-news.model-article.change-form #user-tools { font-size: 12px; margin: 0; }
   .app-news.model-article.change-form :is(input[type=text], textarea, select) {
     box-sizing: border-box;
     max-width: 100%;
     font-size: 16px;
   }
   .app-news.model-article.change-form .submit-row {
-    position: sticky;
-    bottom: 0;
-    z-index: 4;
-    background: var(--body-bg);
-    padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
-    box-shadow: 0 -2px 12px #0002;
+    padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
   }
-  .app-news.model-article.change-form .submit-row input { min-height: 44px; }
 }
+.app-news.model-article.change-form #user-tools .theme-toggle { display: none; }

@@ -1,4 +1,6 @@
 from datetime import timedelta
+from html import unescape
+from uuid import uuid4
 from django import forms
 from django.contrib import admin, messages
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -6,6 +8,9 @@ from django.db import transaction
 from django.db.models import Sum
 from django.urls import path
 from django.utils import timezone
+from django.utils.html import strip_tags
+from django.utils.text import slugify, Truncator
+from .models import ArticleURL
 from simple_history.admin import SimpleHistoryAdmin
 from .models import Article, ArticleDailyView, Category, Author, Tag, Subscription, ReaderMessage, AdPlacement, AdSenseConfiguration, BreakingNewsTicker, LiveBlog, LiveBlogUpdate, Page, Campaign, MediaAsset, DraftRecovery, StoryComment
 from .newsletter import queue_campaign
@@ -22,10 +27,32 @@ class ArticleAdminForm(forms.ModelForm):
         fields='__all__'
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
+        self.fields['slug'].required = False
+        self.fields['slug'].widget = forms.HiddenInput()
+        self.fields['slug'].disabled = True
+        self.fields['summary'].required = False
+        self.fields['summary'].help_text = 'Leave blank to use the opening text of the story.'
         if self.instance.pk and not self.is_bound:
             self.initial['loaded_version']=self.instance.updated_at.isoformat()
+    def clean_slug(self):
+        if self.instance.pk:
+            return self.instance.slug
+        title = self.cleaned_data.get('title', '')
+        base = slugify(title)[:240].rstrip('-_') or 'story'
+        candidate = base
+        while Article.objects.filter(slug=candidate).exists() or ArticleURL.objects.filter(slug=candidate).exists():
+            candidate = f'{base[:227]}-{uuid4().hex[:12]}'
+        return candidate
+
     def clean(self):
         cleaned=super().clean()
+        if not cleaned.get('summary') and cleaned.get('body'):
+            body = cleaned['body'].replace('</p>', '</p> ').replace('<br>', ' ')
+            plain_text = ' '.join(unescape(strip_tags(body)).split())
+            if plain_text:
+                cleaned['summary'] = Truncator(plain_text).chars(400)
+            else:
+                self.add_error('summary', 'Enter a summary when the story has no readable text.')
         if self.instance.pk:
             current=Article.objects.select_for_update().filter(pk=self.instance.pk).values_list('updated_at',flat=True).first()
             expected=self.data.get('loaded_version','')
@@ -51,7 +78,6 @@ class ArticleAdmin(ReadOnlyHistoryAdmin):
     list_display = ['title','category','author','status','homepage_rank','published_at','featured']
     list_filter = ['status','category','featured']
     search_fields = ['title','summary']
-    prepopulated_fields = {'slug':('title',)}
     filter_horizontal = ['tags']
     date_hierarchy = 'published_at'
     readonly_fields = ['updated_at','owner','preview_link']
@@ -61,7 +87,7 @@ class ArticleAdmin(ReadOnlyHistoryAdmin):
         js = ('recovery.js',)
     list_select_related = ['category','author']
     actions = ['submit_for_review']
-    fieldsets = [('Write the story',{'fields':('title','summary','body')}),('Story details',{'fields':('slug','dateline','swahili_headline'),'classes':('collapse',)}),('Attribution',{'fields':('author','category','tags','owner')}),('Photography',{'fields':('media_asset','image','image_alt','image_credit'),'description':'Select a Media asset or upload an Image here, then save the story. This photo appears on the homepage card and above the article. Uploading to the Media Library alone does not attach it to the story.'}),('Assignment',{'fields':('deadline','assignment_notes'),'classes':('collapse',)}),('Publishing',{'fields':('status','published_at','homepage_rank','featured','breaking','editors_pick','preview_link')}),('Editorial record',{'fields':('verification_notes','revised_at','correction','corrected_at')}),('Google search metadata',{'fields':('seo_title','seo_description','updated_at'),'description':'Enter a search title and description for this story. Leave them blank to use the story headline and summary.'})]
+    fieldsets = [('Write the story',{'fields':('title','body')}),('Story details',{'fields':('slug','summary','dateline','swahili_headline','tags','owner'),'classes':('collapse',)}),('Attribution',{'fields':('category','author')}),('Photography',{'fields':('media_asset','image','image_alt','image_credit'),'description':'Select a Media asset or upload an Image here, then save the story. This photo appears on the homepage card and above the article. Uploading to the Media Library alone does not attach it to the story.'}),('Assignment',{'fields':('deadline','assignment_notes'),'classes':('collapse',)}),('Publishing',{'fields':('status','published_at','homepage_rank','featured','breaking','editors_pick','preview_link'),'classes':('collapse',)}),('Editorial record',{'fields':('verification_notes','revised_at','correction','corrected_at'),'classes':('collapse',)}),('Google search metadata',{'fields':('seo_title','seo_description','updated_at'),'classes':('collapse',),'description':'Enter a search title and description for this story. Leave them blank to use the story headline and summary.'})]
     def get_form(self,request,obj=None,change=False,**kwargs):
         fields=kwargs.get('fields')
         if fields is None:
