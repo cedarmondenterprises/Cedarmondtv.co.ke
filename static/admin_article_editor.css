@@ -1,34 +1,34 @@
 /* The article editor uses one light palette, including on dark-mode devices. */
 html:root body.app-news.model-article.change-form {
   color-scheme: light;
-  --body-bg: #f5f6f8;
-  --body-fg: #182232;
-  --body-quiet-color: #4b5667;
-  --body-loud-color: #182232;
+  --body-bg: #fff;
+  --body-fg: #231f20;
+  --body-quiet-color: #594f52;
+  --body-loud-color: #231f20;
   --darkened-bg: #fff;
   --selected-bg: #fceef1;
   --selected-row: #fceef1;
-  --border-color: #9ba6b5;
-  --hairline-color: #dce1e8;
-  --primary: #a31336;
+  --border-color: #9b747c;
+  --hairline-color: #ead7db;
+  --primary: #b40e2e;
   --secondary: #8e1030;
   --accent: #fff;
-  --header-bg: #fff;
-  --header-color: #182232;
-  --header-branding-color: #182232;
-  --header-link-color: #182232;
-  --breadcrumbs-bg: #f5f6f8;
-  --breadcrumbs-fg: #4b5667;
+  --header-bg: #b40e2e;
+  --header-color: #fff;
+  --header-branding-color: #fff;
+  --header-link-color: #fff;
+  --breadcrumbs-bg: #fff4f6;
+  --breadcrumbs-fg: #594f52;
   --breadcrumbs-link-fg: #85122f;
-  --link-fg: #a31336;
+  --link-fg: #b40e2e;
   --link-hover-color: #751026;
   --link-selected-fg: #751026;
-  --button-bg: #455369;
-  --button-hover-bg: #29374b;
-  --default-button-bg: #a31336;
+  --button-bg: #a41331;
+  --button-hover-bg: #751026;
+  --default-button-bg: #b40e2e;
   --default-button-hover-bg: #751026;
-  --object-tools-bg: #455369;
-  --object-tools-hover-bg: #29374b;
+  --object-tools-bg: #a41331;
+  --object-tools-hover-bg: #751026;
   --error-fg: #a01828;
   --message-success-bg: #e6f4ea;
   --message-warning-bg: #fff3d7;
@@ -65,9 +65,9 @@ html:root body.app-news.model-article.change-form {
 }
 .app-news.model-article.change-form fieldset.module > h2,
 .app-news.model-article.change-form fieldset.module > details > summary {
-  background: #fff;
+  background: #fff4f6;
   border-radius: 12px;
-  color: var(--body-fg);
+  color: var(--link-fg);
   font-size: 15px;
   font-weight: 700;
   padding: 14px 18px;
@@ -96,7 +96,7 @@ html:root body.app-news.model-article.change-form {
 }
 .app-news.model-article.change-form #draft-recovery p { margin: 4px 0; }
 .app-news.model-article.change-form :focus-visible {
-  outline: 2px solid #a31336;
+  outline: 2px solid currentColor;
   outline-offset: 2px;
 }
 .app-news.model-article.change-form .submit-row {
