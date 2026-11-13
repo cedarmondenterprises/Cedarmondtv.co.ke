@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title">
-  <title id="title">Cedarmond TV</title>
-  <rect width="512" height="512" rx="64" fill="#ba122b"/>
-  <text x="256" y="382" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="390" font-weight="700" fill="#fff">C</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 64 64">
+  <title>Cedarmond TV</title>
+  <rect width="64" height="64" rx="10" fill="#ba122b"/>
+  <path fill="#fff" d="M12 21h19v5h-7v17h-5V26h-7zm21 0h6l5.5 15L50 21h6l-9 22h-5z"/>
 </svg>
