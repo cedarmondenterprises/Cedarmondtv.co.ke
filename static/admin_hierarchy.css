@@ -1,0 +1,3 @@
+.dashboard-groups { display: grid; gap: 16px; min-width: 0; }
+.dashboard-groups .dashboard-tool-grid a { grid-template-columns: minmax(0, 1fr) auto; }
+.dashboard-groups a:focus-visible, .dashboard-metrics a:focus-visible, .dashboard-primary:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
