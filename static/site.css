@@ -17,3 +17,12 @@
 @media(max-width:650px){.front-grid.single-lead{display:block}.front-grid .lead h2,.front-grid.no-lead-image .lead h2{font-size:30px;line-height:1.16;letter-spacing:-.3px}.card-grid .story-card h3{font-size:19px;line-height:1.25}}
 
 @media(max-width:650px){.navigation{width:calc(100% - 32px)}}
+
+/* Keep the story header close to the navigation on article pages. */
+#content:has(> .article-page) { padding-top: clamp(14px, 2vw, 22px); }
+.article-page > .breadcrumb { margin: 0 0 10px; }
+.article-page > h1 { margin: 0 0 12px; }
+.article-page > .article-summary { margin: 0 0 14px; }
+.article-page > .byline { margin: 0 0 16px; }
+.article-page > figure { margin: 0 0 16px; }
+.article-main > .article-share { margin: 0 0 14px; }
