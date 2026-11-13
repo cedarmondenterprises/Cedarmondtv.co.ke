@@ -1,4 +1,5 @@
 from datetime import timedelta
+from uuid import uuid4
 from django import forms
 from django.contrib import admin, messages
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -6,6 +7,8 @@ from django.db import transaction
 from django.db.models import Sum
 from django.urls import path
 from django.utils import timezone
+from django.utils.text import slugify
+from .models import ArticleURL
 from simple_history.admin import SimpleHistoryAdmin
 from .models import Article, ArticleDailyView, Category, Author, Tag, Subscription, ReaderMessage, AdPlacement, AdSenseConfiguration, BreakingNewsTicker, LiveBlog, LiveBlogUpdate, Page, Campaign, MediaAsset, DraftRecovery, StoryComment
 from .newsletter import queue_campaign
@@ -22,8 +25,23 @@ class ArticleAdminForm(forms.ModelForm):
         fields='__all__'
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
+        self.fields['slug'].required = False
+        self.fields['slug'].help_text = 'Optional. Leave blank to generate a URL for a new story or keep the current URL.'
         if self.instance.pk and not self.is_bound:
             self.initial['loaded_version']=self.instance.updated_at.isoformat()
+    def clean_slug(self):
+        supplied = self.cleaned_data.get('slug')
+        if supplied:
+            return supplied
+        if self.instance.pk:
+            return self.instance.slug
+        title = self.cleaned_data.get('title', '')
+        base = slugify(title)[:240].rstrip('-_') or 'story'
+        candidate = base
+        while Article.objects.filter(slug=candidate).exists() or ArticleURL.objects.filter(slug=candidate).exists():
+            candidate = f'{base[:227]}-{uuid4().hex[:12]}'
+        return candidate
+
     def clean(self):
         cleaned=super().clean()
         if self.instance.pk:
@@ -51,7 +69,6 @@ class ArticleAdmin(ReadOnlyHistoryAdmin):
     list_display = ['title','category','author','status','homepage_rank','published_at','featured']
     list_filter = ['status','category','featured']
     search_fields = ['title','summary']
-    prepopulated_fields = {'slug':('title',)}
     filter_horizontal = ['tags']
     date_hierarchy = 'published_at'
     readonly_fields = ['updated_at','owner','preview_link']
