@@ -1,0 +1,47 @@
+body.app-news.model-article.change-form {
+  --header-bg: var(--darkened-bg);
+  --header-color: var(--body-fg);
+  --header-branding-color: var(--body-fg);
+  --header-link-color: var(--link-fg);
+  --breadcrumbs-bg: var(--darkened-bg);
+  --breadcrumbs-fg: var(--body-quiet-color);
+  --breadcrumbs-link-fg: var(--link-fg);
+}
+.app-news.model-article.change-form fieldset {
+  border: 1px solid var(--hairline-color);
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+.app-news.model-article.change-form fieldset h2 {
+  background: var(--darkened-bg);
+  color: var(--body-fg);
+  font-weight: 600;
+}
+.app-news.model-article.change-form #draft-recovery {
+  padding: 10px 14px;
+  border: 1px solid var(--hairline-color);
+  border-radius: 8px;
+}
+.app-news.model-article.change-form #draft-recovery p { margin: 4px 0; }
+.app-news.model-article.change-form .field-summary textarea { min-height: 5rem; height: 5rem; }
+@media (max-width: 767px) {
+  .app-news.model-article.change-form #header { padding: 10px 16px; gap: 6px; }
+  .app-news.model-article.change-form #site-name { font-size: 19px; margin: 0; }
+  .app-news.model-article.change-form #user-tools { font-size: 11px; line-height: 1.6; padding: 0; margin: 0; }
+  .app-news.model-article.change-form #content { padding: 16px; }
+  .app-news.model-article.change-form .form-row { padding: 12px; }
+  .app-news.model-article.change-form :is(input[type=text], textarea, select) {
+    box-sizing: border-box;
+    max-width: 100%;
+    font-size: 16px;
+  }
+  .app-news.model-article.change-form .submit-row {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    background: var(--body-bg);
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+    box-shadow: 0 -2px 12px #0002;
+  }
+  .app-news.model-article.change-form .submit-row input { min-height: 44px; }
+}
