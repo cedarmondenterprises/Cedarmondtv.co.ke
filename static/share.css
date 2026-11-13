@@ -1,5 +1,65 @@
-.share-destinations ul{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0;margin:12px 0}
-.share-destinations summary{cursor:pointer}
-.share-destinations a,.share a{display:inline-flex;align-items:center;gap:8px}
-.share-destinations a{min-height:44px;padding:6px 10px;border:1px solid var(--line);border-radius:5px}
-.share-destinations img,.share .share-icon{width:18px;height:18px;flex:none}
+.share.article-share {
+  position: relative;
+  gap: 6px;
+}
+
+.share.article-share > :is(a, button),
+.share.article-share .share-destinations > summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 44px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.article-share .share-destinations > summary {
+  width: 44px;
+  list-style: none;
+  cursor: pointer;
+  color: var(--red);
+}
+
+.article-share .share-destinations > summary::-webkit-details-marker { display: none; }
+.article-share .share-destinations > summary:focus-visible {
+  outline: 3px solid var(--red);
+  outline-offset: 3px;
+}
+
+.article-share .share-destinations[open] > summary { border-color: var(--red); }
+
+.article-share .share-destinations ul {
+  position: absolute;
+  z-index: 2;
+  inset-inline-end: 0;
+  width: min(100%, 340px);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 12%);
+}
+
+.article-share .share-destinations a {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 6px;
+}
+
+.article-share .share-destinations a:hover { border-color: var(--red); }
+.article-share :is(.share-icon, .share-destinations img) { width: 18px; height: 18px; flex: none; }
+.article-share #share-status { flex-basis: 100%; }
+.article-share #share-status:empty { position: absolute; }
