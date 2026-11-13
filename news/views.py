@@ -393,6 +393,10 @@ def page(request,slug):
 @login_required
 @never_cache
 def preview(request,pk):
+    if settings.NEWSROOM_2FA_REQUIRED and not request.user.is_verified():
+        from django.contrib.auth.views import redirect_to_login
+
+        return redirect_to_login(request.get_full_path())
     item=get_object_or_404(Article,pk=pk)
     if not request.user.is_staff or not request.user.has_perm('news.view_article'):
         raise Http404
