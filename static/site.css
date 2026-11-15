@@ -6,7 +6,7 @@
 
 .desktop-sections{display:contents}.mobile-sections{display:none}
 @media (max-width: 900px) {
-  .nav-shell { background: #faf8f8; border-bottom: 1px solid var(--line); }
+  .nav-shell { background: #fff; border-bottom: 1px solid var(--line); }
   .navigation.wrap {
     position: relative;
     display: grid;
@@ -14,7 +14,7 @@
     justify-content: space-between;
     gap: 2px;
     min-height: 0;
-    padding-block: 4px;
+    padding-block: 0;
     overflow: visible;
   }
   .desktop-sections { display: none; }
@@ -25,15 +25,15 @@
     align-items: center;
     justify-content: center;
     min-height: 44px;
-    padding: 0 clamp(3px, 1.15vw, 12px);
-    border-radius: 6px;
-    font-size: clamp(11px, 3vw, 13px);
-    font-weight: 700;
+    padding: 0 3px;
+    border-radius: 0;
+    font-size: 12px;
+    font-weight: 600;
   }
   .navigation > a[aria-current="page"] {
     color: var(--deep);
-    background: #f9e5e8;
-    box-shadow: none;
+    background: transparent;
+    box-shadow: inset 0 -3px var(--red);
   }
   .navigation > .search-link { margin: 0; }
   .mobile-sections > summary { cursor: pointer; list-style: none; gap: 5px; }
@@ -46,7 +46,7 @@
     border-bottom: 1.5px solid var(--red);
     transform: translateY(-1px) rotate(45deg);
   }
-  .mobile-sections[open] > summary { color: var(--deep); background: #f9e5e8; }
+  .mobile-sections[open] > summary { color: var(--deep); background: #fff; box-shadow: inset 0 -3px var(--red); }
   .mobile-sections > summary:focus-visible { outline: 2px solid var(--red); }
   .mobile-section-panel {
     position: absolute;
@@ -56,8 +56,9 @@
     padding: 6px;
     background: #fff;
     border: 1px solid var(--line);
-    border-radius: 8px;
-    box-shadow: 0 8px 24px #17191d1a;
+    border-radius: 0;
+    border-top: 2px solid var(--red);
+    box-shadow: 0 4px 8px #17191d12;
   }
   .mobile-sections[open] .mobile-section-panel {
     display: grid;
@@ -71,7 +72,7 @@
     white-space: normal;
     overflow-wrap: anywhere;
   }
-  .mobile-section-panel a[aria-current="page"] { background: #f9e5e8; box-shadow: none; }
+  .mobile-section-panel a[aria-current="page"] { color: var(--red); background: #fff; box-shadow: none; }
 }
 @media(prefers-reduced-motion:no-preference){@view-transition{navigation:auto}::view-transition-old(root){animation:page-fade-out .12s ease-out both}::view-transition-new(root){animation:page-fade-in .18s ease-out both}}
 @keyframes page-fade-out{to{opacity:0}}
