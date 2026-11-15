@@ -433,3 +433,16 @@ def ads_txt(request):
         return HttpResponse('',content_type='text/plain')
     publisher=config.publisher_id.removeprefix('ca-pub-')
     return HttpResponse(f'google.com, pub-{publisher}, DIRECT, f08c47fec0942fa0\n',content_type='text/plain')
+
+
+@require_http_methods(['GET'])
+def indexnow_key(request):
+    import os
+    import re
+
+    key = os.getenv('INDEXNOW_KEY', '')
+    if not re.fullmatch(r'[a-zA-Z0-9-]{8,128}', key):
+        raise Http404
+    response = HttpResponse(key, content_type='text/plain')
+    response['Cache-Control'] = 'no-store'
+    return response

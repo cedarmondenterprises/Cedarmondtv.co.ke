@@ -4,7 +4,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt && useradd --create-home --uid 10001 app
 COPY --chown=app:app . .
-RUN mkdir -p /app/media /app/staticfiles && chown -R app:app /app/media /app/staticfiles
+RUN mkdir -p /app/media /app/staticfiles /app/distribution-state && chown -R app:app /app/media /app/staticfiles /app/distribution-state
 USER app
 RUN DEBUG=1 python manage.py collectstatic --noinput
 EXPOSE 8000

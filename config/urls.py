@@ -8,6 +8,7 @@ from news import views
 from news.feeds import ArticleSitemap, AuthorSitemap, CategorySitemap, LatestFeed, LiveBlogSitemap, PageSitemap, StaticSitemap, TagSitemap
 
 urlpatterns = [
+    path('indexnow-key.txt', views.indexnow_key, name='indexnow_key'),
     path('newsroom/preview/<int:pk>/', views.preview, name='preview'),
     path('admin/', admin.site.urls),
     path('api/schema/', SpectacularAPIView.as_view(), name='api-schema'),
