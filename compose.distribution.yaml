@@ -1,0 +1,18 @@
+services:
+  distribution:
+    build: .
+    env_file: .env
+    environment:
+      POSTGRES_HOST: db
+      REDIS_URL: redis://redis:6379/0
+      DISTRIBUTION_STATE: /app/distribution-state/delivery.sqlite3
+    command: ["python", "manage.py", "distribution_worker"]
+    restart: unless-stopped
+    volumes:
+      - distribution_state:/app/distribution-state
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [backend, edge]
+volumes:
+  distribution_state:
