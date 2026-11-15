@@ -1,1 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#ba122b"/><text x="32" y="46" text-anchor="middle" font-family="Georgia,serif" font-weight="bold" font-size="44" fill="white">C</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Cedarmond TV</title>
+  <rect width="64" height="64" rx="10" fill="#ba122b"/>
+  <path fill="#fff" d="M12 21h19v5h-7v17h-5V26h-7zm21 0h6l5.5 15L50 21h6l-9 22h-5z"/>
+</svg>

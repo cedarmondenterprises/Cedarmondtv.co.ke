@@ -180,6 +180,10 @@ class LiveBlogUpdate(models.Model):
     @property
     def rendered_content(self): return sanitize_html(self.content)
 
+    @property
+    def public_byline(self):
+        return (self.created_by.get_full_name().strip() if self.created_by else '') or 'Cedarmond TV newsroom'
+
     def save(self,*args,**kwargs):
         self.content=sanitize_html(self.content)
         super().save(*args,**kwargs)
