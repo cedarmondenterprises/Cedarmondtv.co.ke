@@ -1,0 +1,12 @@
+{% extends "admin/login.html" %}{% load unfold %}
+{% block content %}
+{% include "unfold/helpers/unauthenticated_title.html" with title="Newsroom sign in" subtitle="Cedarmond TV" %}
+<p class="mb-6">Enter your password and authenticator or recovery code.</p>
+{{ form.non_field_errors }}
+<form action="{{ app_path }}" method="post" id="login-form">{% csrf_token %}
+{% for field in form %}{% if field.name != 'otp_challenge' and field.name != 'otp_device' %}{% include "unfold/helpers/field.html" with field=field %}{% endif %}{% endfor %}
+{% if form.otp_device.field.choices %}{{ form.otp_device }}{% endif %}
+<input type="hidden" name="next" value="{{ next }}">
+{% component "unfold/components/button.html" with submit=1 variant="primary" class="mt-6 w-full" %}Sign in{% endcomponent %}
+</form>
+{% endblock %}

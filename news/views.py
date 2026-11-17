@@ -48,7 +48,8 @@ def absolute_image_url(image):
     if not image:
         return None
     try:
-        return settings.SITE_URL + image.url
+        from urllib.parse import urljoin
+        return urljoin(settings.SITE_URL + '/', image.url)
     except ValueError:
         return None
 
@@ -129,6 +130,11 @@ def listing(request,kind=None,slug=None):
             articles = articles.none()
     if query:
         articles = articles.filter(Q(title__icontains=query)|Q(summary__icontains=query)|Q(body__icontains=query)|Q(author__name__icontains=query)|Q(category__name__icontains=query)|Q(tags__name__icontains=query)).distinct(); title = 'Search results'
+        if is_search:
+            from integrations.search import search_articles
+            external_results = search_articles(query)
+            if external_results is not None:
+                articles = external_results
     page=Paginator(articles,9).get_page(request.GET.get('page'))
     pagination_params=request.GET.copy()
     pagination_params.pop('page',None)

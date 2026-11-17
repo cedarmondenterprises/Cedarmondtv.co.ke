@@ -2,6 +2,19 @@ from io import BytesIO
 from pathlib import Path
 from django.core.files.base import ContentFile
 from PIL import Image, ImageOps
+from imagekit import ImageSpec
+from imagekit.processors import ResizeToFit
+
+class ArticleImageSpec(ImageSpec):
+    processors = [ResizeToFit(1800, 1800, upscale=False)]
+    format = "WEBP"
+    options = {"quality":85}
+
+class CardImageSpec(ImageSpec):
+    processors = [ResizeToFit(640, 640, upscale=False)]
+    format = "WEBP"
+    options = {"quality":80}
+
 
 def optimize_article_image(article):
     if not article.image:
@@ -14,10 +27,10 @@ def optimize_article_image(article):
     article.image.open('rb')
     with Image.open(article.image) as original:
         picture=ImageOps.exif_transpose(original).convert('RGB')
-        picture.thumbnail((1800,1800))
-        output=BytesIO(); picture.save(output,'WEBP',quality=85)
+        source=BytesIO(); picture.save(source,'PNG'); source.seek(0)
+        output=ArticleImageSpec(source=source).generate()
         stem=Path(article.image.name).stem
-        article.image.save(stem+'.webp',ContentFile(output.getvalue()),save=False)
-        picture.thumbnail((640,640))
-        output=BytesIO(); picture.save(output,'WEBP',quality=80)
-        article.thumbnail.save(stem+'.webp',ContentFile(output.getvalue()),save=False)
+        article.image.save(stem+'.webp',ContentFile(output.read()),save=False)
+        source.seek(0)
+        output=CardImageSpec(source=source).generate()
+        article.thumbnail.save(stem+'.webp',ContentFile(output.read()),save=False)

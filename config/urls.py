@@ -5,9 +5,12 @@ from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from news import views
+from integrations import views as integration_views
 from news.feeds import ArticleSitemap, AuthorSitemap, CategorySitemap, LatestFeed, LiveBlogSitemap, PageSitemap, StaticSitemap, TagSitemap
 
 urlpatterns = [
+    path('push/subscription/', integration_views.push_subscription, name='push_subscription'),
+    path('webpush-worker.js', integration_views.service_worker, name='push_worker'),
     path('indexnow-key.txt', views.indexnow_key, name='indexnow_key'),
     path('newsroom/preview/<int:pk>/', views.preview, name='preview'),
     path('admin/', admin.site.urls),
@@ -47,3 +50,7 @@ urlpatterns = [
     path('ads.txt', views.ads_txt, name='ads_txt'),
 ]
 if settings.DEBUG: urlpatterns += static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)
+
+# Do not expose unauthenticated provider webhooks without the shared secret.
+if settings.ANYMAIL.get('WEBHOOK_SECRET'):
+    urlpatterns += [path('integrations/anymail/', include('anymail.urls'))]

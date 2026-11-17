@@ -1,0 +1,8 @@
+[Unit]
+Description=Daily Cedarmond TV backup
+[Timer]
+OnCalendar=*-*-* 03:00:00 Africa/Nairobi
+Persistent=true
+RandomizedDelaySec=300
+[Install]
+WantedBy=timers.target

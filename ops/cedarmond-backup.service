@@ -1,0 +1,11 @@
+[Unit]
+Description=Cedarmond TV encrypted off-server backup
+Requires=docker.service
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=/etc/cedarmond-backup.env
+ExecStart=/bin/bash -c 'cd "$CEDARMOND_PROJECT_DIR" && bash scripts/backup-verified.sh'
+UMask=0077

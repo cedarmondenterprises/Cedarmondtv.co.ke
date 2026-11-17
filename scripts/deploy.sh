@@ -4,7 +4,7 @@ cd "$(dirname "$0")/.."
 test -f .env || { printf 'Run python3 scripts/configure.py first.
 ' >&2; exit 1; }
 docker compose config --quiet
-docker compose build web mail
+docker compose build
 # Validate production security before applying migrations or updating the running stack.
 docker compose run --rm --no-deps web python manage.py shell -c 'from django.conf import settings; import sys; sys.exit("Deployment refused: DEBUG is enabled." if settings.DEBUG else 0)'
 docker compose run --rm --no-deps web python manage.py check --deploy

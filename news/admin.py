@@ -3,6 +3,7 @@ from html import unescape
 from uuid import uuid4
 from django import forms
 from django.contrib import admin, messages
+from unfold.admin import ModelAdmin, StackedInline
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.db.models import Sum
@@ -60,7 +61,7 @@ class ArticleAdminForm(forms.ModelForm):
                 raise forms.ValidationError('This story changed after you opened it. Reload the latest version before saving.')
         return cleaned
 
-class ReadOnlyHistoryAdmin(SimpleHistoryAdmin):
+class ReadOnlyHistoryAdmin(SimpleHistoryAdmin, ModelAdmin):
     def history_view(self,request,object_id,extra_context=None):
         extra_context={**(extra_context or {}),'can_restore':self.model is Article and request.user.has_perm('news.publish_article') and request.user.has_perm('news.add_article')}
         return super().history_view(request,object_id,extra_context)
@@ -125,16 +126,19 @@ class ArticleAdmin(ReadOnlyHistoryAdmin):
         return format_html('<a href="{}" target="_blank" rel="noopener">Open private preview</a>',reverse('preview',args=[obj.pk]))
     def get_queryset(self,request):
         qs=super().get_queryset(request)
-        return qs if request.user.has_perm('news.publish_article') else qs.filter(owner=request.user)
+        from .permissions import accessible_articles
+        return accessible_articles(request.user, qs)
     def get_readonly_fields(self,request,obj=None):
         fields = list(super().get_readonly_fields(request,obj))
         if not request.user.has_perm('news.publish_article'): fields += ['status','published_at','homepage_rank','featured','breaking','editors_pick']
         return fields
     def has_view_permission(self,request,obj=None):
-        if obj and not request.user.has_perm('news.publish_article') and obj.owner_id != request.user.pk: return False
+        from .permissions import can_view_article
+        if obj and not can_view_article(request.user, obj): return False
         return super().has_view_permission(request,obj)
     def has_change_permission(self,request,obj=None):
-        if obj and not request.user.has_perm('news.publish_article') and (obj.status == 'published' or obj.owner_id != request.user.pk): return False
+        from .permissions import can_edit_article
+        if obj and not can_edit_article(request.user, obj): return False
         return super().has_change_permission(request,obj)
     def has_delete_permission(self,request,obj=None):
         return request.user.has_perm('news.publish_article') and super().has_delete_permission(request,obj)
@@ -154,12 +158,12 @@ class ArticleAdmin(ReadOnlyHistoryAdmin):
             item.status='review'; item._history_user=request.user; item.save(); count+=1
         self.message_user(request,f'{count} stories submitted for review.')
 
-@admin.register(Category,Tag,Author)
-class NamedAdmin(admin.ModelAdmin):
+@admin.register(Author)
+class NamedAdmin(ModelAdmin):
     prepopulated_fields = {'slug':('name',)}
     search_fields = ['name']
 
-class LiveBlogUpdateInline(admin.StackedInline):
+class LiveBlogUpdateInline(StackedInline):
     model = LiveBlogUpdate
     extra = 1
     fields = ['content','published','pinned','created_by','created_at']
@@ -168,7 +172,7 @@ class LiveBlogUpdateInline(admin.StackedInline):
     show_change_link = False
 
 @admin.register(LiveBlog)
-class LiveBlogAdmin(admin.ModelAdmin):
+class LiveBlogAdmin(ModelAdmin):
     list_display=['title','category','author','status','published_at','updated_at']
     list_filter=['status','category']
     search_fields=['title','summary','author__name']
@@ -199,7 +203,7 @@ class PageAdmin(ReadOnlyHistoryAdmin):
     fieldsets=[('Page content',{'fields':['title','slug','body','published','position']}),('Search appearance',{'fields':['seo_title','seo_description','updated_at'],'classes':['collapse']})]
 
 @admin.register(Subscription)
-class SubscriptionAdmin(admin.ModelAdmin):
+class SubscriptionAdmin(ModelAdmin):
     list_display = ['email','active','created_at','confirmed_at']
     list_filter = ['active']
     search_fields = ['email']
@@ -207,13 +211,13 @@ class SubscriptionAdmin(admin.ModelAdmin):
     def has_add_permission(self,request): return False
 
 @admin.register(ReaderMessage)
-class MessageAdmin(admin.ModelAdmin):
+class MessageAdmin(ModelAdmin):
     list_display = ['subject','name','created_at','resolved']
     list_filter = ['resolved']
     readonly_fields = ['name','email','subject','message','created_at']
 
 @admin.register(Campaign)
-class CampaignAdmin(admin.ModelAdmin):
+class CampaignAdmin(ModelAdmin):
     list_display=['subject','created_at','queued_at']
     readonly_fields=['queued_at','created_at']
     actions=['queue_selected']
@@ -232,7 +236,7 @@ class CampaignAdmin(admin.ModelAdmin):
             except ValueError as exc: self.message_user(request,str(exc),level=messages.ERROR)
             else: self.message_user(request,f'{count} messages queued for {campaign.subject}.')
 @admin.register(AdPlacement)
-class AdPlacementAdmin(admin.ModelAdmin):
+class AdPlacementAdmin(ModelAdmin):
     list_display = ['label','placement','active','destination']
     list_filter = ['position','active']
     list_editable = ['active']
@@ -252,7 +256,7 @@ class AdPlacementAdmin(admin.ModelAdmin):
         return format_html('<img src="{}" alt="{}" style="max-width:520px;max-height:180px;width:auto;height:auto">',obj.image.url,obj.label)
 
 @admin.register(AdSenseConfiguration)
-class AdSenseConfigurationAdmin(admin.ModelAdmin):
+class AdSenseConfigurationAdmin(ModelAdmin):
     list_display=['active','publisher_id','header_slot_id','article_slot_id','updated_at']
     readonly_fields=['updated_at']
     fieldsets=[('Google AdSense',{'fields':['active','publisher_id','header_slot_id','article_slot_id'],'description':'This form accepts IDs only. It does not accept JavaScript or HTML. AdSense stays off until the site is approved and privacy/consent requirements are configured.'}),('Record',{'fields':['updated_at'],'classes':['collapse']})]
@@ -268,7 +272,7 @@ class AdSenseConfigurationAdmin(admin.ModelAdmin):
         super().save_model(request,obj,form,change)
 
 @admin.register(BreakingNewsTicker)
-class BreakingNewsTickerAdmin(admin.ModelAdmin):
+class BreakingNewsTickerAdmin(ModelAdmin):
     list_display=['message','active','starts_at','ends_at','scroll_seconds']
     list_filter=['active','starts_at','ends_at']
     search_fields=['message']
@@ -277,7 +281,7 @@ class BreakingNewsTickerAdmin(admin.ModelAdmin):
     fieldsets=[('Ticker message',{'fields':['message','link']}),('Display schedule',{'fields':['active','starts_at','ends_at'],'description':'Use Nairobi time. The message appears only between its start and end times. Disable Active to hide it immediately.'}),('Animation',{'fields':['scroll_seconds'],'description':'Controls the time taken for one complete pass across the ticker. Readers can pause the animation.'}),('Record',{'fields':['created_at','updated_at'],'classes':['collapse']})]
 
 @admin.register(ArticleDailyView)
-class ArticleDailyViewAdmin(admin.ModelAdmin):
+class ArticleDailyViewAdmin(ModelAdmin):
     change_list_template='admin/news/articleanalytics_change_list.html'
     list_display=['article','viewed_on','country_code','device_type','view_count']
     list_filter=['viewed_on','country_code','device_type']
@@ -312,7 +316,7 @@ class ArticleDailyViewAdmin(admin.ModelAdmin):
         return super().changelist_view(request,{**(extra_context or {}),**context})
 
 @admin.register(StoryComment)
-class StoryCommentAdmin(admin.ModelAdmin):
+class StoryCommentAdmin(ModelAdmin):
     list_display=['created_at','display_name','article','status','moderated_by']
     list_filter=['status','created_at']
     search_fields=['display_name','body','article__title']
@@ -334,7 +338,7 @@ class StoryCommentAdmin(admin.ModelAdmin):
         self.message_user(request,f'{count} comments rejected.')
 
 @admin.register(MediaAsset)
-class MediaAssetAdmin(admin.ModelAdmin):
+class MediaAssetAdmin(ModelAdmin):
     list_display=['title','preview','credit','rights','created_by','created_at']
     list_display_links=['title']
     search_fields=['title','alt_text','credit','rights']
@@ -349,3 +353,21 @@ class MediaAssetAdmin(admin.ModelAdmin):
         if not obj or not obj.image: return 'Upload an image to preview it.'
         from django.utils.html import format_html
         return format_html('<img src="{}" alt="{}" style="max-width:160px;height:auto">',obj.thumbnail.url if obj.thumbnail else obj.image.url,obj.alt_text)
+
+
+from import_export.admin import ImportExportModelAdmin
+from integrations.resources import CategoryResource, TagResource
+
+class TaxonomyAdmin(ImportExportModelAdmin, ModelAdmin):
+    prepopulated_fields = {'slug': ('name',)}
+    search_fields = ['name']
+    def has_import_permission(self, request): return request.user.is_superuser
+    def has_export_permission(self, request): return request.user.is_superuser
+
+@admin.register(Category)
+class CategoryAdmin(TaxonomyAdmin):
+    resource_classes = [CategoryResource]
+
+@admin.register(Tag)
+class TagAdmin(TaxonomyAdmin):
+    resource_classes = [TagResource]

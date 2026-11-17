@@ -28,7 +28,8 @@ class CommentForm(forms.Form):
 def visible_articles(user):
     if not user.is_staff or not user.has_perm('news.view_article'): raise PermissionDenied
     articles=Article.objects.select_related('owner','author','category')
-    return articles if user.has_perm('news.publish_article') else articles.filter(owner=user)
+    from .permissions import accessible_articles
+    return accessible_articles(user, articles)
 
 
 def desk(request,admin_site):

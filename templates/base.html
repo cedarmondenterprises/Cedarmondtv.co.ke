@@ -27,7 +27,6 @@
 <link rel="stylesheet" href="{% static 'footer.css' %}">
 <link rel="stylesheet" href="{% static 'ticker.css' %}">
 <link rel="alternate" type="application/rss+xml" title="Cedarmond TV" href="{% url 'feed' %}">
-{% if adsense_config and adsense_config.active and adsense_config.publisher_id and request.path == '/' or adsense_config and adsense_config.active and adsense_config.publisher_id and request.path|slice:':7' == '/story/' %}<link rel="stylesheet" href="{% static 'adsense.css' %}"><script nonce="{{ request.csp_nonce }}" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_config.publisher_id }}" crossorigin="anonymous"></script><script nonce="{{ request.csp_nonce }}" defer src="{% static 'adsense.js' %}"></script>{% endif %}
 {% block meta %}{% endblock %}
 <script nonce="{{ request.csp_nonce }}" defer src="{% static 'site.js' %}"></script>
 </head>
@@ -86,5 +85,6 @@
     </div>
   </div>
 </footer>
+{% include 'integrations/public.html' %}
 </body>
 </html>
