@@ -1,0 +1,15 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'vendor/cookieconsent/cookieconsent.css' %}">
+<link rel="stylesheet" href="{% static 'integrations.css' %}">
+<link rel="stylesheet" href="{% static 'adsense.css' %}">
+<div class="reader-preferences">
+<button type="button" data-cc="show-preferencesModal">Privacy choices</button>
+{% if webpush_enabled %}<button type="button" id="news-alerts">Enable news alerts</button><span id="alerts-status" role="status"></span>{% endif %}
+</div>
+<form id="platform-csrf" hidden>{% csrf_token %}</form>
+<script nonce="{{ request.csp_nonce }}" defer src="{% static 'vendor/cookieconsent/cookieconsent.umd.js' %}"></script>
+<script id="platform-client" nonce="{{ request.csp_nonce }}" defer src="{% static 'integrations.js' %}"
+ data-umami-url="{{ umami_script_url }}" data-umami-id="{{ umami_website_id }}"
+ data-gtm="{{ gtm_container_id }}" data-push-key="{{ vapid_public_key }}"
+ {% if adsense_config.active and adsense_config.publisher_id %}data-adsense="{{ adsense_config.publisher_id }}"{% endif %}
+ data-ads-init="{% static 'adsense.js' %}"></script>

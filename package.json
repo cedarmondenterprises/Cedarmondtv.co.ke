@@ -1,0 +1,15 @@
+{
+  "name": "cedarmond",
+  "version": "1.0.0",
+  "dependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.65.1",
+    "vanilla-cookieconsent": "3.3.0"
+  },
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "test:a11y": "playwright test",
+    "vendor:consent": "node scripts/vendor-consent.cjs"
+  }
+}

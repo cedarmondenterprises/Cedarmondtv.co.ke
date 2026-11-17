@@ -4,6 +4,7 @@
 {% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin_newsroom.css' %}"><link rel="stylesheet" href="{% static 'admin_hierarchy.css' %}">{% endblock %}
 {% block content %}
 <div class="newsroom-dashboard">
+{% if request.user.is_superuser %}<p><a href="{% url 'admin:platform_integrations' %}">Platform integrations and health</a></p>{% endif %}
   <header class="dashboard-welcome">
     <div><p class="newsroom-kicker">CEDARMOND TV · NEWSROOM</p><h1>Newsroom dashboard</h1><p>Manage stories, review submissions and publish updates.</p></div>
     {% if perms.news.add_article %}<a class="dashboard-primary" href="{% url 'admin:news_article_add' %}"><span aria-hidden="true">＋</span> Write a story</a>{% endif %}

@@ -11,18 +11,18 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000').rstrip('/')
 CSRF_TRUSTED_ORIGINS = [SITE_URL]
 NEWSROOM_2FA_REQUIRED = os.getenv('NEWSROOM_2FA_REQUIRED', '0') == '1'
-INSTALLED_APPS = ['config.admin_apps.NewsroomAdminConfig','django_otp','django_otp.plugins.otp_totp','django_otp.plugins.otp_static','django.contrib.auth','django.contrib.contenttypes','django.contrib.sessions','django.contrib.messages','django.contrib.staticfiles','django.contrib.sitemaps','rest_framework','drf_spectacular','drf_spectacular_sidecar','axes','django_prose_editor','simple_history','post_office','news']
-MIDDLEWARE = ['django.middleware.security.SecurityMiddleware','news.security_headers.CSPNonceMiddleware','whitenoise.middleware.WhiteNoiseMiddleware','django.contrib.sessions.middleware.SessionMiddleware','django.middleware.common.CommonMiddleware','django.middleware.csrf.CsrfViewMiddleware','django.contrib.auth.middleware.AuthenticationMiddleware','django_otp.middleware.OTPMiddleware','django.contrib.messages.middleware.MessageMiddleware','django.middleware.clickjacking.XFrameOptionsMiddleware','axes.middleware.AxesMiddleware','simple_history.middleware.HistoryRequestMiddleware']
+INSTALLED_APPS = ['unfold.apps.BasicAppConfig','unfold.contrib.import_export','config.admin_apps.NewsroomAdminConfig','django_otp','django_otp.plugins.otp_totp','django_otp.plugins.otp_static','django.contrib.auth','django.contrib.contenttypes','django.contrib.sessions','django.contrib.messages','django.contrib.staticfiles','django.contrib.sitemaps','rest_framework','drf_spectacular','drf_spectacular_sidecar','axes','django_prose_editor','simple_history','post_office','import_export','imagekit','storages','anymail','django_celery_beat','guardian','auditlog','health_check','health_check.db','health_check.cache','integrations.apps.IntegrationsConfig','news']
+MIDDLEWARE = ['django.middleware.security.SecurityMiddleware','news.security_headers.CSPNonceMiddleware','whitenoise.middleware.WhiteNoiseMiddleware','django.contrib.sessions.middleware.SessionMiddleware','django.middleware.common.CommonMiddleware','django.middleware.csrf.CsrfViewMiddleware','django.contrib.auth.middleware.AuthenticationMiddleware','django_otp.middleware.OTPMiddleware','django.contrib.messages.middleware.MessageMiddleware','django.middleware.clickjacking.XFrameOptionsMiddleware','axes.middleware.AxesMiddleware','simple_history.middleware.HistoryRequestMiddleware','auditlog.middleware.AuditlogMiddleware']
 ROOT_URLCONF = 'config.urls'
 LOGIN_URL = '/admin/login/'
-TEMPLATES = [{'BACKEND':'django.template.backends.django.DjangoTemplates','DIRS':[BASE_DIR/'templates'],'APP_DIRS':True,'OPTIONS':{'context_processors':['django.template.context_processors.request','django.contrib.auth.context_processors.auth','django.contrib.messages.context_processors.messages','news.context.site','news.context.admin_dashboard']}}]
+TEMPLATES = [{'BACKEND':'django.template.backends.django.DjangoTemplates','DIRS':[BASE_DIR/'templates'],'APP_DIRS':True,'OPTIONS':{'context_processors':['django.template.context_processors.request','django.contrib.auth.context_processors.auth','django.contrib.messages.context_processors.messages','news.context.site','news.context.admin_dashboard','integrations.context.public_integrations']}}]
 WSGI_APPLICATION = 'config.wsgi.application'
 if os.getenv('POSTGRES_HOST'):
     DATABASES = {'default':{'ENGINE':'django.db.backends.postgresql','HOST':os.environ['POSTGRES_HOST'],'NAME':os.getenv('POSTGRES_DB','cedarmond'),'USER':os.getenv('POSTGRES_USER','cedarmond'),'PASSWORD':os.environ['POSTGRES_PASSWORD'],'CONN_MAX_AGE':60}}
 else:
     DATABASES = {'default':{'ENGINE':'django.db.backends.sqlite3','NAME':BASE_DIR/'db.sqlite3'}}
 AUTH_PASSWORD_VALIDATORS = [{'NAME':'django.contrib.auth.password_validation.'+name} for name in ['UserAttributeSimilarityValidator','MinimumLengthValidator','CommonPasswordValidator','NumericPasswordValidator']]
-AUTHENTICATION_BACKENDS = ['axes.backends.AxesStandaloneBackend','django.contrib.auth.backends.ModelBackend']
+AUTHENTICATION_BACKENDS = ['axes.backends.AxesStandaloneBackend','django.contrib.auth.backends.ModelBackend','guardian.backends.ObjectPermissionBackend']
 AXES_FAILURE_LIMIT = 5
 AXES_COOLOFF_TIME = 1
 AXES_LOCKOUT_PARAMETERS = ['username', 'ip_address']
@@ -97,7 +97,7 @@ if not DEBUG:
         raise ImproperlyConfigured('Production SECRET_KEY must contain at least 50 random characters.')
     if not SITE_URL.startswith('https://'):
         raise ImproperlyConfigured('Production SITE_URL must use HTTPS.')
-    if NEWSLETTER_ENABLED and (not EMAIL_HOST or EMAIL_BACKEND != 'django.core.mail.backends.smtp.EmailBackend'):
+    if NEWSLETTER_ENABLED and (EMAIL_BACKEND == 'django.core.mail.backends.console.EmailBackend' or (EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend' and not EMAIL_HOST)):
         raise ImproperlyConfigured('Newsletter requires an SMTP host and SMTP backend.')
 
 SENTRY_DSN = os.getenv('SENTRY_DSN', '').strip()
@@ -112,3 +112,7 @@ if SENTRY_DSN and not DEBUG:
         traces_sample_rate=0.0,
         include_local_variables=False,
     )
+
+from .integrations import *  # noqa: F403
+if MEDIA_S3_ENABLED:
+    STORAGES['default'] = {'BACKEND':'storages.backends.s3.S3Storage','OPTIONS':MEDIA_S3_OPTIONS}
