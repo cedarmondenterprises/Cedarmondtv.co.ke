@@ -18,7 +18,7 @@ def site(request):
         'site_url': settings.SITE_URL,
         'canonical': settings.SITE_URL + request.path,
         'seo_title': 'Cedarmond TV | Kenya, in perspective.',
-        'seo_description': 'Independent journalism and original reporting from Kenya, covering politics, business, counties, culture and sport.',
+        'seo_description': 'Kenyan news and analysis covering politics, business, counties, culture and sport.',
         'seo_image': settings.SITE_URL + settings.STATIC_URL + 'cedarmond-mark.svg',
         'seo_image_alt': 'Cedarmond TV',
         'noindex': False,
