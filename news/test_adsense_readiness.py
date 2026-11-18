@@ -4,7 +4,7 @@ from django.test import TestCase, override_settings
 from .models import AdSenseConfiguration, Article, Author, Category, Page
 
 
-@override_settings(SECURE_SSL_REDIRECT=False, RATELIMIT_ENABLE=False)
+@override_settings(SECURE_SSL_REDIRECT=False, RATELIMIT_ENABLE=False, STORAGES={'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'}, 'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'}})
 class AdsenseReadinessTests(TestCase):
     def setUp(self):
         self.category = Category.objects.create(name="Kenya", slug="kenya")
