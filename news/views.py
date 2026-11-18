@@ -99,7 +99,7 @@ def home(request):
         'most_read': most_read,
         'has_supporting_stories': bool(top_stories or latest),
         'seo_title': 'Cedarmond TV | Kenyan News, Politics, Business & Culture',
-        'seo_description': 'Independent journalism and original reporting from Kenya. Read the latest news, politics, business, county, culture and sports coverage.',
+        'seo_description': 'Kenyan news, politics, business, county reporting, culture, sports and analysis from Cedarmond TV.',
         'seo_image': absolute_image_url(lead.display_image) if lead and lead.display_image else logo_url,
         'seo_image_alt': (lead.display_alt if lead.display_alt and lead.display_alt.strip(' .') else lead.title) if lead and lead.display_image else 'Cedarmond TV',
         'website_schema_json': json_ld(website_schema),
@@ -108,13 +108,13 @@ def home(request):
 
 def listing(request,kind=None,slug=None):
     articles = Article.objects.live()
-    title, description = 'Latest stories', 'The latest original reporting from the Cedarmond TV newsroom.'
+    title, description = 'Latest stories', 'The latest Kenyan news, developments and analysis from Cedarmond TV.'
     if kind == 'category':
         obj = get_object_or_404(Category,slug=slug); articles = articles.filter(category=obj); title = obj.name
         description = f'Latest {obj.name.lower()} news and reporting from Cedarmond TV.'
     elif kind == 'author':
         obj = get_object_or_404(Author,slug=slug); articles = articles.filter(author=obj); title = obj.name
-        description = obj.bio or f'Articles and original reporting by {obj.name} for Cedarmond TV.'
+        description = obj.bio or f'Articles by {obj.name} for Cedarmond TV.'
     elif kind == 'tag':
         obj = get_object_or_404(Tag,slug=slug); articles = articles.filter(tags=obj); title = obj.name
         description = f'Latest stories about {obj.name} from Cedarmond TV.'
