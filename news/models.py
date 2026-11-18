@@ -126,7 +126,7 @@ class LiveBlog(models.Model):
 
     class Meta:
         ordering = ['-published_at','-pk']
-        indexes = [models.Index(fields=['status','published_at'])]
+        indexes = [models.Index(fields=['status','published_at'], name='news_liveblog_status_pub_idx')]
         verbose_name = 'live coverage'
         verbose_name_plural = 'live coverage'
 
@@ -166,7 +166,7 @@ class LiveBlogUpdate(models.Model):
 
     class Meta:
         ordering = ['-pinned','-created_at','-pk']
-        indexes = [models.Index(fields=['live_blog','published','created_at'])]
+        indexes = [models.Index(fields=['live_blog','published','created_at'], name='news_liveupd_blog_pub_time_idx')]
         verbose_name = 'live coverage update'
         verbose_name_plural = 'live coverage updates'
 
