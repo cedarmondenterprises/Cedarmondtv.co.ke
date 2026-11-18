@@ -352,7 +352,7 @@ class NewsroomTests(TestCase):
     @override_settings(RATELIMIT_ENABLE=True)
     def test_rate_limit_survives_new_cookies(self):
         cache.clear()
-        data={'name':'Reader','email':'reader@example.com','subject':'Hello','message':'Hello.'}
+        data={'name':'Reader','email':'reader@example.com','subject':'General enquiry','message':'Hello.'}
         for _ in range(10): Client().post('/contact/',data)
         response=Client().post('/contact/',data)
         self.assertContains(response,'Please wait')

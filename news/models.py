@@ -82,7 +82,9 @@ class Article(models.Model):
     @property
     def display_thumbnail(self): return self.thumbnail if self.image else (self.media_asset.thumbnail if self.media_asset_id else None)
     @property
-    def display_alt(self): return self.image_alt if self.image else (self.media_asset.alt_text if self.media_asset_id else '')
+    def display_alt(self):
+        alt = self.image_alt if self.image else (self.media_asset.alt_text if self.media_asset_id else '')
+        return alt if alt and alt.strip(' .') else self.title
     @property
     def display_credit(self): return self.image_credit if self.image else (self.media_asset.credit if self.media_asset_id else '')
     @transaction.atomic
@@ -124,7 +126,7 @@ class LiveBlog(models.Model):
 
     class Meta:
         ordering = ['-published_at','-pk']
-        indexes = [models.Index(fields=['status','published_at'])]
+        indexes = [models.Index(fields=['status','published_at'], name='news_liveblog_status_pub_idx')]
         verbose_name = 'live coverage'
         verbose_name_plural = 'live coverage'
 
@@ -164,7 +166,7 @@ class LiveBlogUpdate(models.Model):
 
     class Meta:
         ordering = ['-pinned','-created_at','-pk']
-        indexes = [models.Index(fields=['live_blog','published','created_at'])]
+        indexes = [models.Index(fields=['live_blog','published','created_at'], name='news_liveupd_blog_pub_time_idx')]
         verbose_name = 'live coverage update'
         verbose_name_plural = 'live coverage updates'
 

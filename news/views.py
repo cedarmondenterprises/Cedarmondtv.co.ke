@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import timedelta
 from urllib.parse import quote
 from django.conf import settings
@@ -98,22 +99,22 @@ def home(request):
         'most_read': most_read,
         'has_supporting_stories': bool(top_stories or latest),
         'seo_title': 'Cedarmond TV | Kenyan News, Politics, Business & Culture',
-        'seo_description': 'Independent journalism and original reporting from Kenya. Read the latest news, politics, business, county, culture and sports coverage.',
+        'seo_description': 'Kenyan news, politics, business, county reporting, culture, sports and analysis from Cedarmond TV.',
         'seo_image': absolute_image_url(lead.display_image) if lead and lead.display_image else logo_url,
-        'seo_image_alt': lead.display_alt if lead and lead.display_image else 'Cedarmond TV',
+        'seo_image_alt': (lead.display_alt if lead.display_alt and lead.display_alt.strip(' .') else lead.title) if lead and lead.display_image else 'Cedarmond TV',
         'website_schema_json': json_ld(website_schema),
     }
     return render(request, 'news/home.html', context)
 
 def listing(request,kind=None,slug=None):
     articles = Article.objects.live()
-    title, description = 'Latest stories', 'The latest original reporting from the Cedarmond TV newsroom.'
+    title, description = 'Latest stories', 'The latest Kenyan news, developments and analysis from Cedarmond TV.'
     if kind == 'category':
         obj = get_object_or_404(Category,slug=slug); articles = articles.filter(category=obj); title = obj.name
         description = f'Latest {obj.name.lower()} news and reporting from Cedarmond TV.'
     elif kind == 'author':
         obj = get_object_or_404(Author,slug=slug); articles = articles.filter(author=obj); title = obj.name
-        description = obj.bio or f'Articles and original reporting by {obj.name} for Cedarmond TV.'
+        description = obj.bio or f'Articles by {obj.name} for Cedarmond TV.'
     elif kind == 'tag':
         obj = get_object_or_404(Tag,slug=slug); articles = articles.filter(tags=obj); title = obj.name
         description = f'Latest stories about {obj.name} from Cedarmond TV.'
@@ -123,7 +124,7 @@ def listing(request,kind=None,slug=None):
     page=Paginator(articles,9).get_page(request.GET.get('page'))
     pagination_params=request.GET.copy()
     pagination_params.pop('page',None)
-    noindex = bool(query) or request.resolver_match.url_name == 'search'
+    noindex = bool(query) or request.resolver_match.url_name == 'search' or page.paginator.count == 0
     canonical = settings.SITE_URL + request.path
     if page.number > 1 and not noindex:
         canonical += f'?page={page.number}'
@@ -158,6 +159,7 @@ def live_blog_list(request):
     return render(request,'news/live_blog_list.html',{
         'live_blogs':coverage,
         'active_count':coverage.filter(status=LiveBlog.STATUS_LIVE).count(),
+        'noindex': not coverage.exists(),
         'seo_title':'Live coverage | Cedarmond TV',
         'seo_description':'Follow live updates and continuing coverage from the Cedarmond TV newsroom.',
     })
@@ -269,7 +271,7 @@ def render_article(request,item,preview=False,comment_form=None,status=200):
         'seo_title': branded_title(item.seo_title or item.title),
         'seo_description': Truncator(strip_tags(item.seo_description or item.summary)).chars(160),
         'seo_image': absolute_image_url(item.display_image) if item.display_image else logo_url,
-        'seo_image_alt': item.display_alt or 'Cedarmond TV' if item.display_image else 'Cedarmond TV',
+        'seo_image_alt': (item.display_alt if item.display_alt and item.display_alt.strip(' .') else item.title) if item.display_image else 'Cedarmond TV',
         'noindex': preview,
         'share_url': quote(url, safe=''),
         'share_text': quote(item.title + ' ' + url, safe=''),
@@ -353,7 +355,7 @@ def contact(request):
 
 def page(request,slug):
     item=get_object_or_404(Page,slug=slug,published=True)
-    description = item.seo_description or Truncator(strip_tags(item.body)).chars(160)
+    description = item.seo_description or Truncator(' '.join(strip_tags(re.sub(r'</(?:p|h[1-6]|li|div|blockquote)>', ' ', item.body, flags=re.IGNORECASE)).split())).chars(160)
     canonical = settings.SITE_URL + item.get_absolute_url()
     logo_url = settings.SITE_URL + settings.STATIC_URL + 'cedarmond-mark.svg'
     schema = {
