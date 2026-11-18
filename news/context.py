@@ -12,7 +12,7 @@ def site(request):
     breaking_ticker = BreakingNewsTicker.objects.filter(active=True, starts_at__lte=current_time, ends_at__gt=current_time).first()
     adsense_config = AdSenseConfiguration.objects.first()
     return {
-        'categories': Category.objects.all(),
+        'categories': Category.objects.filter(article__status='published', article__published_at__lte=current_time).distinct(),
         'breaking_story': Article.objects.live().filter(breaking=True).first(),
         'breaking_ticker': breaking_ticker,
         'site_url': settings.SITE_URL,
