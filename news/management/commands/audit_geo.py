@@ -2,6 +2,7 @@
 import json
 from django.core.management.base import BaseCommand
 from news.models import Article
+from news.geo import discovery_gaps
 
 
 class Command(BaseCommand):
@@ -11,17 +12,7 @@ class Command(BaseCommand):
         articles = Article.objects.live().prefetch_related("public_sources")
         count = 0
         for article in articles.iterator(chunk_size=100):
-            gaps = []
-            for present, label in (
-                (article.summary.strip(), "summary"),
-                (article.author.bio.strip(), "author biography"),
-                (article.key_fact_lines, "key facts (optional)"),
-                (article.public_sources.all(), "public citations (where appropriate)"),
-                (article.seo_description.strip(), "custom meta description (summary fallback exists)"),
-                (article.display_image, "image"),
-            ):
-                if not present:
-                    gaps.append(label)
+            gaps = discovery_gaps(article)
             self.stdout.write(json.dumps({"url": article.get_absolute_url(), "review": gaps}, ensure_ascii=False))
             count += 1
         self.stdout.write(json.dumps({"published_stories_checked": count}))

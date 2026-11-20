@@ -25,3 +25,11 @@ Google requires no special AI schema or llms.txt file. This change uses standard
 ## Release
 
 Includes a migration joining the AdSense and platform migration branches, then additive key-fact/source migrations. Back up production first. Preserves consent-gated ads and the AdSense account verification tag. No paid API or subscription required.
+
+## Admin review
+
+Open /admin/geo/ or choose Search and AI discovery review from the newsroom home.
+Search published headlines and follow permitted edit links to address gaps. The
+report shows 25 stories per page, respects article access permissions and the
+configured admin 2FA requirement, and excludes drafts and scheduled stories.
+It shares the same checks as audit_geo and does not change any content.

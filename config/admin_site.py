@@ -25,9 +25,11 @@ class NewsroomAdminSite(UnfoldAdminSite):
         from django_otp.plugins.otp_static.models import StaticDevice
         from django_otp.plugins.otp_totp.models import TOTPDevice
         from integrations.views import dashboard, dependency_health
+        from news.geo import geo_dashboard
         for model in (StaticDevice, TOTPDevice):
             if self.is_registered(model): self.unregister(model)
         return [
+            path("geo/", self.admin_view(lambda r: geo_dashboard(r, self)), name="geo_dashboard"),
             path('integrations/', self.admin_view(lambda r: dashboard(r,self)), name='platform_integrations'),
             path('integrations/health/', self.admin_view(dependency_health), name='platform_health'),
         ] + super().get_urls()

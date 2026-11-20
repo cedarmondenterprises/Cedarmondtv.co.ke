@@ -59,3 +59,36 @@ class GEOTests(TestCase):
             call_command("audit_geo", stdout=output)
             self.assertNotIn(self.article.get_absolute_url(), output.getvalue())
             self.assertIn('"published_stories_checked": 0', output.getvalue())
+
+    def test_dashboard_requires_staff_and_article_permission(self):
+        from django.contrib.auth.models import User
+        self.assertEqual(self.client.get('/admin/geo/').status_code, 302)
+        staff = User.objects.create_user('limited', password='test-only-password', is_staff=True)
+        self.client.force_login(staff)
+        self.assertEqual(self.client.get('/admin/geo/').status_code, 403)
+
+    def test_dashboard_search_excludes_private_content(self):
+        from django.contrib.auth.models import User
+        admin = User.objects.create_superuser('geo-editor', 'editor@example.org', 'test-password')
+        self.client.force_login(admin)
+        response = self.client.get('/admin/geo/?q=Public')
+        self.assertContains(response, self.article.title)
+        self.assertNotContains(response, 'CONFIDENTIAL SOURCE')
+        self.assertContains(response, 'Edit story')
+        response = self.client.get('/admin/geo/?q=unmatched')
+        self.assertNotContains(response, self.article.title)
+        self.article.status = 'draft'
+        self.article.save()
+        self.assertNotContains(self.client.get('/admin/geo/'), self.article.title)
+
+    def test_dashboard_respects_article_scope(self):
+        from django.contrib.auth.models import User, Permission
+        staff = User.objects.create_user('reporter', password='test-only-password', is_staff=True)
+        staff.user_permissions.add(Permission.objects.get(codename='view_article', content_type__app_label='news'))
+        self.client.force_login(staff)
+        self.assertNotContains(self.client.get('/admin/geo/'), self.article.title)
+        self.article.owner = staff
+        self.article.save()
+        response = self.client.get('/admin/geo/')
+        self.assertContains(response, self.article.title)
+        self.assertNotContains(response, 'Edit story')

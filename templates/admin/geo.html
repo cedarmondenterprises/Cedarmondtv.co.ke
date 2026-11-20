@@ -1,0 +1,14 @@
+{% extends 'admin/base_site.html' %}
+{% block content %}
+<p>Review your published stories for useful context and attribution. This checklist does not measure rankings or guarantee AI citations. Optional fields can remain empty when they do not help the reader.</p>
+<form method="get" role="search"><label for="geo-query">Find a headline</label><input id="geo-query" name="q" value="{{ query }}" type="search" maxlength="200"><button type="submit">Search</button></form>
+<p>{{ page.paginator.count }} published stor{{ page.paginator.count|pluralize:'y,ies' }} available to your account.</p>
+{% for row in rows %}
+<section class="module" aria-labelledby="story-{{ row.article.pk }}">
+<h2 id="story-{{ row.article.pk }}">{{ row.article.title }}</h2>
+<p>{% if row.can_edit %}<a href="{% url 'admin:news_article_change' row.article.pk %}">Edit story</a> · {% endif %}<a href="{{ row.article.get_absolute_url }}">View published story</a></p>
+{% if row.gaps %}<ul>{% for gap in row.gaps %}<li>Review {{ gap }}</li>{% endfor %}</ul>{% else %}<p>No missing fields in these checks. Verify factual accuracy and source quality before making changes.</p>{% endif %}
+</section>
+{% empty %}<p>No published stories match this view.</p>{% endfor %}
+{% if page.has_other_pages %}<nav aria-label="Discovery review pages">{% if page.has_previous %}<a href="?q={{ query|urlencode }}&amp;page={{ page.previous_page_number }}">Previous</a>{% endif %} <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span> {% if page.has_next %}<a href="?q={{ query|urlencode }}&amp;page={{ page.next_page_number }}">Next</a>{% endif %}</nav>{% endif %}
+{% endblock %}
