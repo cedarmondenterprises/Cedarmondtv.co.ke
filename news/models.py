@@ -8,7 +8,7 @@ from .editor import EXTENSIONS, sanitize_html
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils import timezone
-from django.core.validators import FileExtensionValidator, MinValueValidator, MaxValueValidator, RegexValidator
+from django.core.validators import FileExtensionValidator, MinValueValidator, MaxValueValidator, RegexValidator, URLValidator
 from django.core.exceptions import ValidationError
 
 def image_size(value):
@@ -76,7 +76,12 @@ class Article(models.Model):
     revised_at = models.DateTimeField(null=True, blank=True, help_text='Set for substantive editorial updates.')
     correction = models.TextField(blank=True, help_text='Public note explaining what was corrected.')
     corrected_at = models.DateTimeField(null=True, blank=True)
+    key_facts = models.TextField(blank=True, max_length=1500, help_text="Optional public key facts, one per line. Use only facts supported by the story. Never include private notes.")
     verification_notes = models.TextField(blank=True, help_text='Private source and fact-check notes.')
+
+    @property
+    def key_fact_lines(self):
+        return [line.strip() for line in self.key_facts.splitlines() if line.strip()]
 
     def __str__(self): return self.title
     def get_absolute_url(self): return reverse('article',args=[self.slug])
@@ -89,7 +94,9 @@ class Article(models.Model):
     @property
     def display_thumbnail(self): return self.thumbnail if self.image else (self.media_asset.thumbnail if self.media_asset_id else None)
     @property
-    def display_alt(self): return self.image_alt if self.image else (self.media_asset.alt_text if self.media_asset_id else '')
+    def display_alt(self):
+        alt = self.image_alt if self.image else (self.media_asset.alt_text if self.media_asset_id else '')
+        return alt if alt and alt.strip(' .') else self.title
     @property
     def display_credit(self): return self.image_credit if self.image else (self.media_asset.credit if self.media_asset_id else '')
     @transaction.atomic
@@ -131,7 +138,7 @@ class LiveBlog(models.Model):
 
     class Meta:
         ordering = ['-published_at','-pk']
-        indexes = [models.Index(fields=['status','published_at'])]
+        indexes = [models.Index(fields=['status','published_at'], name='news_livebl_status_3ad4c9_idx')]
         verbose_name = 'live coverage'
         verbose_name_plural = 'live coverage'
 
@@ -171,7 +178,7 @@ class LiveBlogUpdate(models.Model):
 
     class Meta:
         ordering = ['-pinned','-created_at','-pk']
-        indexes = [models.Index(fields=['live_blog','published','created_at'])]
+        indexes = [models.Index(fields=['live_blog','published','created_at'], name='news_livebl_live_bl_e87d98_idx')]
         verbose_name = 'live coverage update'
         verbose_name_plural = 'live coverage updates'
 
@@ -382,3 +389,16 @@ class StoryComment(models.Model):
         ordering=['-created_at','-pk']
         indexes=[models.Index(fields=['article','status','-created_at'])]
     def __str__(self): return f'{self.display_name} on {self.article}'
+
+
+class ArticleSource(models.Model):
+    article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name="public_sources")
+    title = models.CharField(max_length=200, help_text="Public source title, such as a court ruling or official report.")
+    url = models.URLField(max_length=1000, validators=[URLValidator(schemes=["http", "https"])])
+    position = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["position", "pk"]
+
+    def __str__(self):
+        return self.title

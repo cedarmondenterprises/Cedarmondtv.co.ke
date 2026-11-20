@@ -27,6 +27,7 @@
 <link rel="stylesheet" href="{% static 'footer.css' %}">
 <link rel="stylesheet" href="{% static 'ticker.css' %}">
 <link rel="alternate" type="application/rss+xml" title="Cedarmond TV" href="{% url 'feed' %}">
+{% if adsense_config and adsense_config.publisher_id %}<meta name="google-adsense-account" content="{{ adsense_config.publisher_id }}">{% endif %}
 {% block meta %}{% endblock %}
 <script nonce="{{ request.csp_nonce }}" defer src="{% static 'site.js' %}"></script>
 </head>
