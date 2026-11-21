@@ -3,6 +3,7 @@
 {% block content_title %}{% endblock %}
 {% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin_newsroom.css' %}"><link rel="stylesheet" href="{% static 'admin_hierarchy.css' %}">{% endblock %}
 {% block content %}
+{% if perms.news.view_article %}<p><a href="{% url 'admin:geo_dashboard' %}">Search and AI discovery review</a></p>{% endif %}
 <div class="newsroom-dashboard">
 {% if request.user.is_superuser %}<p><a href="{% url 'admin:platform_integrations' %}">Platform integrations and health</a></p>{% endif %}
   <header class="dashboard-welcome">

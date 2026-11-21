@@ -1,5 +1,6 @@
 {% extends 'admin/base_site.html' %}
 {% block content %}
+<p><a href="{% url 'admin:geo_dashboard' %}">Review search and AI discovery</a></p>
 <p>Configured does not mean a service has passed a live delivery test. Credentials remain on the server.</p>
 <p><a href="{% url 'admin:platform_health' %}">Check database and cache</a></p>
 <div style="overflow-x:auto"><table><caption>Twenty platform integrations</caption><thead><tr><th>Integration</th><th>Setup</th><th>Details</th></tr></thead><tbody>

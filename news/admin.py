@@ -11,7 +11,7 @@ from django.urls import path
 from django.utils import timezone
 from django.utils.html import strip_tags
 from django.utils.text import slugify, Truncator
-from .models import ArticleURL
+from .models import ArticleURL, ArticleSource
 from simple_history.admin import SimpleHistoryAdmin
 from .models import Article, ArticleDailyView, Category, Author, Tag, Subscription, ReaderMessage, AdPlacement, AdSenseConfiguration, BreakingNewsTicker, LiveBlog, LiveBlogUpdate, Page, Campaign, MediaAsset, DraftRecovery, StoryComment
 from .newsletter import queue_campaign
@@ -73,8 +73,29 @@ class ReadOnlyHistoryAdmin(SimpleHistoryAdmin, ModelAdmin):
         if not self.has_view_permission(request,obj): raise PermissionDenied
         return super().history_form_view(request,object_id,version_id,extra_context)
 
+class ArticleSourceInline(StackedInline):
+    model = ArticleSource
+    extra = 0
+    fields = ("title", "url", "position")
+    verbose_name_plural = "Public sources (optional; visible to readers)"
+
+    def has_view_permission(self, request, obj=None):
+        return admin.site._registry[Article].has_view_permission(request, obj)
+
+    def has_change_permission(self, request, obj=None):
+        return admin.site._registry[Article].has_change_permission(request, obj)
+
+    def has_add_permission(self, request, obj=None):
+        parent = admin.site._registry[Article]
+        return parent.has_change_permission(request, obj) if obj else parent.has_add_permission(request)
+
+    def has_delete_permission(self, request, obj=None):
+        return self.has_change_permission(request, obj)
+
+
 @admin.register(Article)
 class ArticleAdmin(ReadOnlyHistoryAdmin):
+    inlines = [ArticleSourceInline]
     form=ArticleAdminForm
     list_display = ['title','category','author','status','homepage_rank','published_at','featured']
     list_filter = ['status','category','featured']
@@ -88,7 +109,7 @@ class ArticleAdmin(ReadOnlyHistoryAdmin):
         js = ('recovery.js',)
     list_select_related = ['category','author']
     actions = ['submit_for_review']
-    fieldsets = [('Write the story',{'fields':('title','body')}),('Story details',{'fields':('slug','summary','dateline','swahili_headline','tags','owner'),'classes':('collapse',)}),('Attribution',{'fields':('category','author')}),('Photography',{'fields':('media_asset','image','image_alt','image_credit'),'description':'Select a Media asset or upload an Image here, then save the story. This photo appears on the homepage card and above the article. Uploading to the Media Library alone does not attach it to the story.'}),('Assignment',{'fields':('deadline','assignment_notes'),'classes':('collapse',)}),('Publishing',{'fields':('status','published_at','homepage_rank','featured','breaking','editors_pick','preview_link'),'classes':('collapse',)}),('Editorial record',{'fields':('verification_notes','revised_at','correction','corrected_at'),'classes':('collapse',)}),('Google search metadata',{'fields':('seo_title','seo_description','updated_at'),'classes':('collapse',),'description':'Enter a search title and description for this story. Leave them blank to use the story headline and summary.'})]
+    fieldsets = [('Write the story',{'fields':('title','body')}),('Story details',{'fields':('slug','summary','dateline','swahili_headline','tags','owner'),'classes':('collapse',)}),('Attribution',{'fields':('category','author')}),('Photography',{'fields':('media_asset','image','image_alt','image_credit'),'description':'Select a Media asset or upload an Image here, then save the story. This photo appears on the homepage card and above the article. Uploading to the Media Library alone does not attach it to the story.'}),('Assignment',{'fields':('deadline','assignment_notes'),'classes':('collapse',)}),('Publishing',{'fields':('status','published_at','homepage_rank','featured','breaking','editors_pick','preview_link'),'classes':('collapse',)}),('Reader key facts',{'fields':('key_facts',),'classes':('collapse',)}),('Editorial record',{'fields':('verification_notes','revised_at','correction','corrected_at'),'classes':('collapse',)}),('Google search metadata',{'fields':('seo_title','seo_description','updated_at'),'classes':('collapse',),'description':'Enter a search title and description for this story. Leave them blank to use the story headline and summary.'})]
     def get_form(self,request,obj=None,change=False,**kwargs):
         fields=kwargs.get('fields')
         if fields is None:

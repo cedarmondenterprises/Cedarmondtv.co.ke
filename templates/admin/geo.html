@@ -1,0 +1,22 @@
+{% extends 'admin/base_site.html' %}
+{% load static %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin-geo.css' %}">{% endblock %}
+{% block content %}
+<div class="geo-dashboard">
+<header class="geo-intro"><span class="geo-eyebrow">EDITORIAL REVIEW</span><h1>Search and AI discovery</h1><p>Find gaps in your published stories and open them for editing.</p></header>
+<form class="geo-search" method="get" role="search"><label for="geo-query">Find a headline</label><div class="geo-search-controls"><input id="geo-query" name="q" value="{{ query }}" type="search" placeholder="Search published stories" maxlength="200"><button type="submit">Search</button></div></form>
+<div class="geo-results-heading"><h2>Published stories <span>{{ page.paginator.count }}</span></h2>{% if query %}<a href="{% url 'admin:geo_dashboard' %}">Clear search</a>{% endif %}</div>
+<p class="geo-note">Suggestions are optional editorial checks, not a ranking score or a guarantee of AI citations.</p>
+<div class="geo-stories">
+{% for row in rows %}
+<section class="geo-card" aria-labelledby="story-{{ row.article.pk }}">
+<p class="geo-card-meta">{{ row.article.category.name }} · {{ row.article.published_at|date:'j M Y' }}</p>
+<h2 id="story-{{ row.article.pk }}">{{ row.article.title }}</h2>
+{% if row.gaps %}<p class="geo-check-label">Review suggestions</p><ul class="geo-checks">{% for gap in row.gaps %}<li>{{ gap|capfirst }}</li>{% endfor %}</ul>{% else %}<p class="geo-complete">No missing fields in these checks. Verify accuracy and source quality.</p>{% endif %}
+<div class="geo-actions">{% if row.can_edit %}<a class="geo-edit" href="{% url 'admin:news_article_change' row.article.pk %}">Edit story</a>{% endif %}<a class="geo-view" href="{{ row.article.get_absolute_url }}">View story <span aria-hidden="true">↗</span></a></div>
+</section>
+{% empty %}<div class="geo-empty"><h2>No stories found</h2><p>Try another headline, or publish a story to see it here.</p></div>{% endfor %}
+</div>
+{% if page.has_other_pages %}<nav class="geo-pagination" aria-label="Discovery review pages">{% if page.has_previous %}<a href="?q={{ query|urlencode }}&amp;page={{ page.previous_page_number }}">Previous</a>{% endif %} <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span> {% if page.has_next %}<a href="?q={{ query|urlencode }}&amp;page={{ page.next_page_number }}">Next</a>{% endif %}</nav>{% endif %}
+</div>
+{% endblock %}
