@@ -374,7 +374,7 @@ def contact(request):
         else:
             form.save(); messages.success(request,'Your message has reached our editorial inbox.'); return redirect('contact')
     title = 'Contact'
-    description = 'Contact Cedarmond TV with a story tip, correction, advertising enquiry, privacy request or feedback.'
+    description = 'Contact Cedarmond TV for news tips, reader support, advertising, careers and general enquiries, or to report abuse.'
     return render(request,'news/contact.html',{'form':form,'title':title,'description':description,'seo_title':f'{title} | Cedarmond TV','seo_description':description,'button':'Send message'})
 
 def page(request,slug):
