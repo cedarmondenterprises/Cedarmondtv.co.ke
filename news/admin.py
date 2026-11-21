@@ -96,6 +96,13 @@ class ArticleSourceInline(StackedInline):
 @admin.register(Article)
 class ArticleAdmin(ReadOnlyHistoryAdmin):
     inlines = [ArticleSourceInline]
+    filter_horizontal = ["related_stories"]
+
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        if db_field.name == "related_stories":
+            kwargs["queryset"] = Article.objects.live()
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
+
     form=ArticleAdminForm
     list_display = ['title','category','author','status','homepage_rank','published_at','featured']
     list_filter = ['status','category','featured']
@@ -109,7 +116,7 @@ class ArticleAdmin(ReadOnlyHistoryAdmin):
         js = ('recovery.js',)
     list_select_related = ['category','author']
     actions = ['submit_for_review']
-    fieldsets = [('Write the story',{'fields':('title','body')}),('Story details',{'fields':('slug','summary','dateline','swahili_headline','tags','owner'),'classes':('collapse',)}),('Attribution',{'fields':('category','author')}),('Photography',{'fields':('media_asset','image','image_alt','image_credit'),'description':'Select a Media asset or upload an Image here, then save the story. This photo appears on the homepage card and above the article. Uploading to the Media Library alone does not attach it to the story.'}),('Assignment',{'fields':('deadline','assignment_notes'),'classes':('collapse',)}),('Publishing',{'fields':('status','published_at','homepage_rank','featured','breaking','editors_pick','preview_link'),'classes':('collapse',)}),('Reader key facts',{'fields':('key_facts',),'classes':('collapse',)}),('Editorial record',{'fields':('verification_notes','revised_at','correction','corrected_at'),'classes':('collapse',)}),('Google search metadata',{'fields':('seo_title','seo_description','updated_at'),'classes':('collapse',),'description':'Enter a search title and description for this story. Leave them blank to use the story headline and summary.'})]
+    fieldsets = [('Write the story',{'fields':('title','body')}),('Story details',{'fields':('slug','summary','dateline','swahili_headline','tags','owner'),'classes':('collapse',)}),('Attribution',{'fields':('category','author')}),('Photography',{'fields':('media_asset','image','image_alt','image_credit'),'description':'Select a Media asset or upload an Image here, then save the story. This photo appears on the homepage card and above the article. Uploading to the Media Library alone does not attach it to the story.'}),('Assignment',{'fields':('deadline','assignment_notes'),'classes':('collapse',)}),('Publishing',{'fields':('status','published_at','homepage_rank','featured','breaking','editors_pick','preview_link'),'classes':('collapse',)}),('Reader key facts',{'fields':('key_facts','related_stories'),'classes':('collapse',)}),('Editorial record',{'fields':('verification_notes','revised_at','correction','corrected_at'),'classes':('collapse',)}),('Google search metadata',{'fields':('seo_title','seo_description','updated_at'),'classes':('collapse',),'description':'Enter a search title and description for this story. Leave them blank to use the story headline and summary.'})]
     def get_form(self,request,obj=None,change=False,**kwargs):
         fields=kwargs.get('fields')
         if fields is None:
