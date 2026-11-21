@@ -144,8 +144,17 @@ def listing(request,kind=None,slug=None):
     if page.number > 1 and not noindex:
         canonical += f'?page={page.number}'
     first_story = page.object_list[0] if page.object_list else None
+    profile = obj if kind == 'author' else None
+    profile_schema = {'@context': 'https://schema.org', '@type': 'ProfilePage', 'url': settings.SITE_URL + profile.get_absolute_url(), 'mainEntity': {'@type': 'Person', 'name': profile.name, 'url': settings.SITE_URL + profile.get_absolute_url(), 'description': profile.bio}} if profile else None
+    if profile and profile.role:
+        profile_schema['mainEntity']['jobTitle'] = profile.role
+    if profile and profile.reporting_interests:
+        profile_schema['mainEntity']['knowsAbout'] = profile.reporting_interests
+
     return render(request, 'news/list.html', {
         'page': page,
+        'author_profile': profile,
+        'schema_json': json_ld(profile_schema) if profile_schema else '',
         'title': title,
         'description': description,
         'query': query,
@@ -242,6 +251,16 @@ def live_blog_updates(request,slug):
     } for update in updates]
     return JsonResponse({'updates':payload,'status':blog.status})
 
+def related_reporting(item):
+    from django.db.models import Count
+    live = Article.objects.live().exclude(pk=item.pk)
+    selected = list(live.filter(pk__in=item.related_stories.values("pk"))[:3])
+    topics = live.filter(tags__in=item.tags.all()).exclude(pk__in=[story.pk for story in selected]).annotate(shared_topics=Count("tags", distinct=True)).order_by("-shared_topics", "-published_at", "-pk")
+    selected.extend(list(topics[:3-len(selected)]))
+    selected.extend(list(live.filter(category=item.category).exclude(pk__in=[story.pk for story in selected])[:3-len(selected)]))
+    return selected
+
+
 def render_article(request,item,preview=False,comment_form=None,status=200):
     url = settings.SITE_URL + item.get_absolute_url()
     images = list(dict.fromkeys(filter(None, [absolute_image_url(item.display_image), absolute_image_url(item.display_thumbnail)])))
@@ -286,7 +305,7 @@ def render_article(request,item,preview=False,comment_form=None,status=200):
         'public_sources': sources,
         'show_correction': bool(item.correction and item.corrected_at and item.corrected_at <= timezone.now()),
         'preview': preview,
-        'related': Article.objects.live().filter(category=item.category).exclude(pk=item.pk)[:3],
+        'related': related_reporting(item),
         'reader_comments': item.reader_comments.filter(status=StoryComment.APPROVED)[:50],
         'comment_count': item.reader_comments.filter(status=StoryComment.APPROVED).count(),
         'comment_form': comment_form or (None if preview else StoryCommentForm()),

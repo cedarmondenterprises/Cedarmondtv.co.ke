@@ -11,7 +11,7 @@ class PlatformOTPTests(TestCase):
     def test_unverified_password_session_cannot_reach_integrations_or_beat(self):
         user=User.objects.create_superuser('otp-platform','otp@example.com','test-password')
         self.client.force_login(user)
-        for url in (reverse('admin:platform_integrations'),reverse('admin:platform_health'),reverse('admin:geo_dashboard'),'/admin/django_celery_beat/periodictask/'):
+        for url in (reverse('admin:platform_integrations'),reverse('admin:platform_health'),reverse('admin:geo_dashboard'),reverse('admin:homepage_editor'),'/admin/django_celery_beat/periodictask/'):
             self.assertEqual(self.client.get(url).status_code,302,url)
     def test_login_exposes_otp_field(self):
         self.assertContains(self.client.get(reverse('admin:login')),'name="otp_token"')

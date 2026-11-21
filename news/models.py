@@ -30,6 +30,8 @@ class Tag(models.Model):
     def get_absolute_url(self): return reverse('tag',args=[self.slug])
 
 class Author(models.Model):
+    role = models.CharField(max_length=100, blank=True)
+    reporting_interests = models.CharField(max_length=250, blank=True, help_text="Public reporting interests, for example Education and county government.")
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True)
     bio = models.TextField(blank=True)
@@ -76,6 +78,7 @@ class Article(models.Model):
     revised_at = models.DateTimeField(null=True, blank=True, help_text='Set for substantive editorial updates.')
     correction = models.TextField(blank=True, help_text='Public note explaining what was corrected.')
     corrected_at = models.DateTimeField(null=True, blank=True)
+    related_stories = models.ManyToManyField("self", blank=True, symmetrical=False, help_text="Optional related reporting. Only published stories are shown to readers.")
     key_facts = models.TextField(blank=True, max_length=1500, help_text="Optional public key facts, one per line. Use only facts supported by the story. Never include private notes.")
     verification_notes = models.TextField(blank=True, help_text='Private source and fact-check notes.')
 
